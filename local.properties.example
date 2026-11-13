@@ -1,0 +1,9 @@
+# Local signing configuration - DO NOT COMMIT
+# Copy to local.properties and fill in values
+# signing.keyAlias=your-key-alias
+# signing.keyPassword=your-key-password
+# signing.storePassword=your-store-password
+# signing.storeFile=signing.jks
+
+# For development only - not for production releases
+# sdk.dir=/path/to/android/sdk

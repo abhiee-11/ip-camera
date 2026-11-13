@@ -27,6 +27,19 @@ android {
         dataBinding = true
         buildConfig = true
     }
+    signingConfigs {
+        release {
+            if (project.hasProperty("signing.storeFile") &&
+                project.hasProperty("signing.storePassword") &&
+                project.hasProperty("signing.keyAlias") &&
+                project.hasProperty("signing.keyPassword")) {
+                storeFile file(signing.storeFile)
+                storePassword signing.storePassword
+                keyAlias signing.keyAlias
+                keyPassword signing.keyPassword
+            }
+        }
+    }
     buildTypes {
         debug {
             debuggable = true
@@ -34,6 +47,7 @@ android {
         release {
             minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 }
