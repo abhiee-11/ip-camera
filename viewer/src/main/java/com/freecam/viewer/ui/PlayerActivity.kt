@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
+@OptIn(UnstableApi::class)
 class PlayerActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPlayerBinding
@@ -89,11 +90,11 @@ class PlayerActivity : AppCompatActivity() {
         btnEvents = binding.playerView.findViewById(R.id.btnEvents)
     }
 
+    @Suppress("UnsafeOptInUsageError")
     private fun playLive() {
         val pairing = this.pairing ?: return
         val rtspUrl = ApiClient.buildRtspUrl(pairing)
         
-        @OptIn(UnstableApi::class)
         val mediaSource = RtspMediaSource.Factory()
             .setUserAgent("FreeCam Viewer")
             .createMediaSource(MediaItem.fromUri(rtspUrl))
@@ -106,6 +107,7 @@ class PlayerActivity : AppCompatActivity() {
         binding.tvMode.setTextColor(0xFF03DAC5.toInt())
     }
 
+    @Suppress("UnsafeOptInUsageError")
     private fun playRecording() {
         val pairing = this.pairing ?: return
         val recording = playbackRecording ?: return
