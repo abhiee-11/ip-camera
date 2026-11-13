@@ -1,5 +1,6 @@
 package com.freecam.camera.service
 
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -29,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.Calendar
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
@@ -76,6 +78,11 @@ class CameraService : Service() {
         settings = Settings.getInstance(this)
         createNotificationChannel()
         acquireLocks()
+        
+        // Schedule nightly restart if enabled
+        if (settings.nightlyRestart) {
+            scheduleNightlyRestart()
+        }
         
         // Initialize managers
         motionDetector = MotionDetector(this, settings) { timestamp, severity ->
@@ -383,6 +390,49 @@ class CameraService : Service() {
             appLog.logError("CameraService", "Error getting IP", e)
         }
         return "0.0.0.0"
+    }
+
+    private fun scheduleNightlyRestart() {
+        try {
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val restartTime = settings.restartTime // "HH:mm" format
+            val parts = restartTime.split(":")
+            val hour = parts[0].toIntOrNull() ?: 4
+            val minute = parts[1].toIntOrNull() ?: 0
+
+            val calendar = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, hour)
+                set(Calendar.MINUTE, minute)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+                if (timeInMillis <= System.currentTimeMillis()) {
+                    add(Calendar.DAY_OF_MONTH, 1)
+                }
+            }
+
+            val restartIntent = Intent(this, NightlyRestartReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(
+                this, 0, restartIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                // API 31+ requires SCHEDULE_EXACT_ALARM permission
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        calendar.timeInMillis,
+                        pendingIntent
+                    )
+                } else {
+                    appLog.logError("CameraService", "Cannot schedule exact alarm - permission not granted")
+                }
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+            }
+            appLog.log("CameraService", "Nightly restart scheduled for ${calendar.time}")
+        } catch (e: Exception) {
+            appLog.logError("CameraService", "Failed to schedule nightly restart", e)
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
