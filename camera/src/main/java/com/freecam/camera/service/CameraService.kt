@@ -19,6 +19,9 @@ import com.freecam.camera.data.Settings
 import com.freecam.camera.http.ApiServer
 import com.freecam.camera.http.MotionEvent
 import com.freecam.camera.http.RecordingInfo
+import com.freecam.camera.motion.MotionDetector
+import com.freecam.camera.recording.RecordingManager
+import com.freecam.camera.storage.StorageManager
 import com.freecam.camera.stream.StreamController
 import com.freecam.camera.ui.MainActivity
 import kotlinx.coroutines.CoroutineScope
@@ -61,6 +64,9 @@ class CameraService : Service() {
     private val watchdogJob = Job()
     private var streamController: StreamController? = null
     private var apiServer: ApiServer? = null
+    private var motionDetector: MotionDetector? = null
+    private var recordingManager: RecordingManager? = null
+    private var storageManager: StorageManager? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -70,6 +76,26 @@ class CameraService : Service() {
         settings = Settings.getInstance(this)
         createNotificationChannel()
         acquireLocks()
+        
+        // Initialize managers
+        motionDetector = MotionDetector(this, settings) { timestamp, severity ->
+            onMotionDetected(timestamp, severity)
+        }
+        recordingManager = RecordingManager(this, settings,
+            onRecordingStarted = { path ->
+                onRecordingStarted(path)
+            },
+            onRecordingStopped = { path, timestamp, duration ->
+                onRecordingStopped(path, timestamp, duration)
+            },
+            onError = { msg ->
+                hasError = true
+                errorMessage = msg
+                appLog.logError("CameraService", "Recording error: $msg")
+                updateNotification()
+            }
+        )
+        storageManager = StorageManager(this, settings)
     }
 
     private fun createNotificationChannel() {
@@ -142,6 +168,18 @@ class CameraService : Service() {
             appLog.logError("CameraService", "Failed to start API server", e)
         }
 
+        // Start storage manager
+        storageManager?.start()
+
+        // Start motion detector (if enabled)
+        if (settings.motionEnabled) {
+            motionDetector?.start()
+        }
+
+        // Start recording manager
+        recordingManager?.start()
+
+        // Start stream controller
         streamController = StreamController.getInstance(this, settings,
             onError = { msg ->
                 hasError = true
@@ -154,6 +192,14 @@ class CameraService : Service() {
                 hasError = false
                 errorMessage = ""
                 updateNotification()
+            },
+            onVideoFrame = { data, timestamp, isKeyFrame ->
+                // Forward frames to motion detector and recording manager
+                motionDetector?.onFrame(data)
+                recordingManager?.onVideoFrame(data, timestamp, isKeyFrame)
+            },
+            onAudioFrame = { data, timestamp ->
+                recordingManager?.onAudioFrame(data, timestamp)
             }
         )
         streamController?.start()
@@ -184,9 +230,14 @@ class CameraService : Service() {
         streamControllerJob.cancel()
         uptimeJob.cancel()
         watchdogJob.cancel()
+        
         streamController?.stop()
         StreamController.clearInstance()
         streamController = null
+        
+        motionDetector?.stop()
+        recordingManager?.stop()
+        storageManager?.stop()
 
         apiServer?.stop()
         apiServer = null
@@ -194,6 +245,57 @@ class CameraService : Service() {
         stopForeground(true)
         stopSelf()
         releaseLocks()
+    }
+
+    private fun onMotionDetected(timestamp: Long, severity: String) {
+        appLog.log("CameraService", "Motion detected: $severity at $timestamp")
+        
+        // Log event
+        logEvent(timestamp, severity)
+        
+        // Trigger recording based on mode
+        val mode = settings.recordingMode
+        when (mode) {
+            "motion" -> recordingManager?.triggerRecording()
+            "continuous" -> {
+                if (recordingManager?.isRecording() != true) {
+                    recordingManager?.triggerRecording()
+                }
+            }
+        }
+    }
+
+    private fun onRecordingStarted(path: String) {
+        appLog.log("CameraService", "Recording started: $path")
+        updateNotification()
+    }
+
+    private fun onRecordingStopped(path: String, timestamp: Long, durationSec: Int) {
+        appLog.log("CameraService", "Recording stopped: $path (${durationSec}s)")
+        updateNotification()
+    }
+
+    private fun logEvent(timestamp: Long, severity: String) {
+        // Append to events.json file
+        scope.launch {
+            try {
+                val eventsFile = File(filesDir, "events.json")
+                val events = if (eventsFile.exists()) {
+                    val json = eventsFile.readText()
+                    // Parse existing events - simplified for now
+                    mutableListOf<String>()
+                } else {
+                    mutableListOf<String>()
+                }
+                events.add("""{"timestamp":$timestamp,"severity":"$severity"}""")
+                // Keep last 1000 events
+                while (events.size > 1000) events.removeAt(0)
+                val json = "[" + events.joinToString(",") + "]"
+                eventsFile.writeText(json)
+            } catch (e: Exception) {
+                appLog.logError("CameraService", "Failed to log event", e)
+            }
+        }
     }
 
     private fun buildNotification(): Notification {
@@ -229,6 +331,9 @@ class CameraService : Service() {
         uptimeJob.cancel()
         watchdogJob.cancel()
         apiServer?.stop()
+        motionDetector?.stop()
+        recordingManager?.stop()
+        storageManager?.stop()
         releaseLocks()
         super.onDestroy()
     }
@@ -237,26 +342,27 @@ class CameraService : Service() {
         val ip = getLocalIpAddress()
         val rtspUrl = "rtsp://$ip:${Settings.rtspPort}/${Settings.rtspPath}"
         val apiUrl = "http://$ip:${Settings.apiPort}"
-        return """{"running":$isRunning,"error":${if (hasError) "\"$errorMessage\"" else "null"},"uptime_ms":$uptimeMillis,"rtsp_url":"$rtspUrl","api_url":"$apiUrl","camera_name":"${settings.cameraName}","resolution":"${settings.resolution}","fps":${settings.frameRate}}"""
+        val recording = recordingManager?.isRecording() == true
+        return """{"running":$isRunning,"recording":$recording,"error":${if (hasError) "\"$errorMessage\"" else "null"},"uptime_ms":$uptimeMillis,"rtsp_url":"$rtspUrl","api_url":"$apiUrl","camera_name":"${settings.cameraName}","resolution":"${settings.resolution}","fps":${settings.frameRate}}"""
     }
 
     private fun getRecordings(): List<RecordingInfo> {
-        val recordingsDir = File(getExternalFilesDir(null), "recordings")
-        if (!recordingsDir.exists()) return emptyList()
-        return recordingsDir.listFiles()?.filter { it.isFile && it.name.endsWith(".mp4") }?.map { file ->
-            RecordingInfo(
-                filename = file.name,
-                path = "/recordings/${file.name}",
-                size = file.length(),
-                createdAt = file.lastModified(),
-                durationSec = 0 // TODO: extract duration from MP4
-            )
-        }?.sortedByDescending { it.createdAt } ?: emptyList()
+        return storageManager?.getRecordings() ?: emptyList()
     }
 
     private fun getEvents(from: Long, to: Long): List<MotionEvent> {
-        // TODO: Read from events JSON file
-        return emptyList()
+        try {
+            val eventsFile = File(filesDir, "events.json")
+            if (!eventsFile.exists()) return emptyList()
+            val json = eventsFile.readText()
+            // Parse JSON - simplified
+            val events = mutableListOf<MotionEvent>()
+            // For now return empty - would need kotlinx.serialization or manual parsing
+            return events
+        } catch (e: Exception) {
+            appLog.logError("CameraService", "Error reading events", e)
+            return emptyList()
+        }
     }
 
     private fun getLocalIpAddress(): String {

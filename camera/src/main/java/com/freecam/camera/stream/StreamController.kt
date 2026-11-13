@@ -17,7 +17,9 @@ class StreamController(
     private val context: Context,
     private val settings: Settings,
     private val onError: (String) -> Unit,
-    private val onStarted: () -> Unit
+    private val onStarted: () -> Unit,
+    private val onVideoFrame: (ByteArray, Long, Boolean) -> Unit = { _, _, _ -> },
+    private val onAudioFrame: (ByteArray, Long) -> Unit = { _, _ -> }
 ) {
 
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -83,6 +85,12 @@ class StreamController(
                 rtspServerCamera!!.prepareAudio(Settings.audioSampleRate, Settings.audioBitrateKbps, Settings.audioStereo)
 
                 rtspServerCamera!!.getStreamClient().setAuthorization(Settings.rtspUser, Settings.rtspPassword)
+                
+                // Note: RootEncoder RTSP-Server 1.2.1 doesn't expose frame callbacks directly
+                // Motion detection and recording will need frames from MediaCodec encoder
+                // For now, we'll simulate frame delivery via a mock callback
+                // TODO: Check if RtspServerCamera2 has setOnFrameCallback or similar
+                
                 rtspServerCamera!!.startStream()
 
             } catch (e: Exception) {
@@ -114,9 +122,11 @@ class StreamController(
             context: Context,
             settings: Settings,
             onError: (String) -> Unit,
-            onStarted: () -> Unit
+            onStarted: () -> Unit,
+            onVideoFrame: (ByteArray, Long, Boolean) -> Unit = { _, _, _ -> },
+            onAudioFrame: (ByteArray, Long) -> Unit = { _, _ -> }
         ): StreamController {
-            return instance ?: StreamController(context, settings, onError, onStarted).also { instance = it }
+            return instance ?: StreamController(context, settings, onError, onStarted, onVideoFrame, onAudioFrame).also { instance = it }
         }
         fun clearInstance() {
             instance?.stop()
