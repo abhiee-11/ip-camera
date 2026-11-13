@@ -3,15 +3,31 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="16dp"
         tools:context=".ui.PairingActivity">
+
+        <com.google.android.material.appbar.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:theme="@style/Theme.FreeCamCamera.AppBarOverlay">
+
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="?attr/colorPrimary"
+                app:popupTheme="@style/Theme.FreeCamCamera.PopupOverlay"
+                app:title="@string/pairing_title" />
+
+        </com.google.android.material.appbar.AppBarLayout>
 
         <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:padding="16dp"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -24,81 +40,62 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/pairing_qr_title"
-                    android:textSize="22sp"
+                    android:textSize="20sp"
                     android:textStyle="bold"
                     android:textColor="@color/teal_200"
-                    android:layout_marginBottom="16dp" />
-
-                <ImageView
-                    android:id="@+id/ivQrCode"
-                    android:layout_width="280dp"
-                    android:layout_height="280dp"
-                    android:layout_marginBottom="16dp"
-                    android:background="@color/white"
-                    android:padding="8dp"
-                    tools:src="@drawable/ic_launcher_background" />
+                    android:layout_marginBottom="8dp" />
 
                 <TextView
-                    android:id="@+id/tvPairingWarning"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/pairing_warning"
                     android:textSize="14sp"
-                    android:textColor="@color/amber_200"
-                    android:gravity="center"
+                    android:textColor="@color/on_dark_variant"
+                    android:layout_marginBottom="24dp"
+                    android:gravity="center" />
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="400dp"
+                    android:layout_height="400dp"
+                    app:cardBackgroundColor="@android:color/white"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="8dp"
+                    android:layout_marginBottom="24dp">
+
+                    <ImageView
+                        android:id="@+id/ivQrCode"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerInside"
+                        android:padding="24dp" />
+                </androidx.cardview.widget.CardView>
+
+                <TextView
+                    android:id="@+id/tvAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textColor="@color/on_dark"
                     android:layout_marginBottom="16dp"
-                    android:paddingHorizontal="16dp" />
+                    android:gravity="center" />
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/pairing_address_label"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="4dp" />
-
-                <Spinner
-                    android:id="@+id/spinnerAddresses"
+                    android:id="@+id/tvToken"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp" />
+                    android:textSize="14sp"
+                    android:textColor="@color/on_dark"
+                    android:layout_marginBottom="16dp"
+                    android:gravity="center" />
 
-                <TextView
+                <Button
+                    android:id="@+id/btnCopyToken"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/pairing_token_label"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="4dp" />
+                    android:text="@string/pairing_copy_token"
+                    android:layout_marginTop="8dp" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_marginBottom="16dp">
-
-                    <TextView
-                        android:id="@+id/tvToken"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:textSize="14sp"
-                        android:fontFamily="monospace"
-                        android:padding="12dp"
-                        android:background="@color/dark_surface"
-                        android:textColor="@color/white"
-                        tools:text="abcdef1234567890abcdef1234567890" />
-
-                    <Button
-                        android:id="@+id/btnCopyToken"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/pairing_copy_token" />
-                </LinearLayout>
             </LinearLayout>
         </ScrollView>
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>

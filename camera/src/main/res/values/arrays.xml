@@ -1,54 +1,63 @@
 <resources>
-    <string-array name="facing_entries">
+    <!-- Camera Facing -->
+    <string-array name="camera_facing_entries">
         <item>@string/facing_back</item>
         <item>@string/facing_front</item>
     </string-array>
-    <string-array name="facing_values">
+    <string-array name="camera_facing_values">
         <item>0</item>
         <item>1</item>
     </string-array>
 
+    <!-- Resolution -->
     <string-array name="resolution_entries">
-        <item>640x480</item>
-        <item>854x480</item>
+        <item>1920x1080</item>
         <item>1280x720</item>
+        <item>640x480</item>
+        <item>320x240</item>
     </string-array>
     <string-array name="resolution_values">
-        <item>640x480</item>
-        <item>854x480</item>
+        <item>1920x1080</item>
         <item>1280x720</item>
+        <item>640x480</item>
+        <item>320x240</item>
     </string-array>
 
-    <string-array name="framerate_entries">
+    <!-- Frame Rate -->
+    <string-array name="frame_rate_entries">
+        <item>5 fps</item>
+        <item>10 fps</item>
+        <item>15 fps</item>
+        <item>20 fps</item>
+        <item>30 fps</item>
+    </string-array>
+    <string-array name="frame_rate_values">
+        <item>5</item>
         <item>10</item>
         <item>15</item>
         <item>20</item>
-        <item>25</item>
-    </string-array>
-    <string-array name="framerate_values">
-        <item>10</item>
-        <item>15</item>
-        <item>20</item>
-        <item>25</item>
+        <item>30</item>
     </string-array>
 
+    <!-- Bitrate -->
     <string-array name="bitrate_entries">
         <item>250 kbps</item>
         <item>500 kbps</item>
-        <item>800 kbps</item>
-        <item>1200 kbps</item>
-        <item>1500 kbps</item>
+        <item>1000 kbps</item>
+        <item>2000 kbps</item>
+        <item>4000 kbps</item>
     </string-array>
     <string-array name="bitrate_values">
         <item>250</item>
         <item>500</item>
-        <item>800</item>
-        <item>1200</item>
-        <item>1500</item>
+        <item>1000</item>
+        <item>2000</item>
+        <item>4000</item>
     </string-array>
 
+    <!-- Rotation -->
     <string-array name="rotation_entries">
-        <item>Auto</item>
+        <item>@string/rotation_auto</item>
         <item>0°</item>
         <item>90°</item>
         <item>180°</item>
@@ -62,6 +71,7 @@
         <item>270</item>
     </string-array>
 
+    <!-- Recording Mode -->
     <string-array name="recording_mode_entries">
         <item>@string/recording_off</item>
         <item>@string/recording_motion</item>
@@ -73,6 +83,43 @@
         <item>continuous</item>
     </string-array>
 
+    <!-- Storage Cap -->
+    <string-array name="storage_cap_entries">
+        <item>1 GB</item>
+        <item>2 GB</item>
+        <item>4 GB</item>
+        <item>6 GB</item>
+        <item>8 GB</item>
+        <item>10 GB</item>
+        <item>15 GB</item>
+        <item>20 GB</item>
+    </string-array>
+    <string-array name="storage_cap_values">
+        <item>1</item>
+        <item>2</item>
+        <item>4</item>
+        <item>6</item>
+        <item>8</item>
+        <item>10</item>
+        <item>15</item>
+        <item>20</item>
+    </string-array>
+
+    <!-- Retention Days -->
+    <string-array name="retention_days_entries">
+        <item>1 day</item>
+        <item>3 days</item>
+        <item>7 days</item>
+        <item>14 days</item>
+    </string-array>
+    <string-array name="retention_days_values">
+        <item>1</item>
+        <item>3</item>
+        <item>7</item>
+        <item>14</item>
+    </string-array>
+
+    <!-- Motion Sensitivity -->
     <string-array name="sensitivity_entries">
         <item>@string/sensitivity_low</item>
         <item>@string/sensitivity_medium</item>
@@ -84,6 +131,25 @@
         <item>high</item>
     </string-array>
 
+    <!-- Motion Cooldown -->
+    <string-array name="cooldown_entries">
+        <item>0 sec</item>
+        <item>30 sec</item>
+        <item>60 sec</item>
+        <item>120 sec</item>
+        <item>300 sec</item>
+        <item>600 sec</item>
+    </string-array>
+    <string-array name="cooldown_values">
+        <item>0</item>
+        <item>30</item>
+        <item>60</item>
+        <item>120</item>
+        <item>300</item>
+        <item>600</item>
+    </string-array>
+
+    <!-- Destination Mode -->
     <string-array name="destination_mode_entries">
         <item>@string/mode_local</item>
         <item>@string/mode_relay_disabled</item>

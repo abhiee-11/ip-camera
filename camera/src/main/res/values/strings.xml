@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">FreeCam Camera</string>
+    <string name="about">About</string>
     <string name="settings_title">Settings</string>
     <string name="pairing_title">Pair Viewer</string>
     <string name="logs_title">Logs</string>
@@ -58,6 +59,12 @@
     <string name="sensitivity_low">Low</string>
     <string name="sensitivity_medium">Medium</string>
     <string name="sensitivity_high">High</string>
+    <string name="rotation_auto">Auto</string>
+    <string name="settings_camera">Camera</string>
+    <string name="settings_recording">Recording</string>
+    <string name="settings_motion">Motion Detection</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_advanced">Advanced</string>
 
     <!-- Pairing -->
     <string name="pairing_qr_title">Scan with FreeCam Viewer</string>

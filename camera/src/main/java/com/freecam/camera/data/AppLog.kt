@@ -63,6 +63,8 @@ class AppLog(private val context: Context) {
 
     fun getLogs(): List<String> = logs.toList()
 
+    fun getLogFile(): File = logFile
+
     fun clear() {
         logs.clear()
         logFile.delete()

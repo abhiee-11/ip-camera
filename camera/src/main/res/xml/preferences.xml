@@ -1,149 +1,113 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory android:title="@string/settings_title">
-
+    <PreferenceCategory android:title="@string/settings_camera">
         <EditTextPreference
             android:key="camera_name"
             android:title="@string/settings_camera_name"
-            android:defaultValue="Camera 1"
+            android:summary="Name shown in viewer app"
             android:dialogTitle="@string/settings_camera_name" />
 
         <ListPreference
             android:key="camera_facing"
             android:title="@string/settings_camera_facing"
-            android:defaultValue="0"
-            android:entries="@array/facing_entries"
-            android:entryValues="@array/facing_values"
-            android:dialogTitle="@string/settings_camera_facing" />
+            android:summary="Which camera to use" />
 
         <ListPreference
             android:key="resolution"
             android:title="@string/settings_resolution"
-            android:defaultValue="640x480"
-            android:entries="@array/resolution_entries"
-            android:entryValues="@array/resolution_values"
-            android:dialogTitle="@string/settings_resolution" />
+            android:summary="Video resolution" />
 
         <ListPreference
             android:key="frame_rate"
             android:title="@string/settings_frame_rate"
-            android:defaultValue="15"
-            android:entries="@array/framerate_entries"
-            android:entryValues="@array/framerate_values"
-            android:dialogTitle="@string/settings_frame_rate" />
+            android:summary="Frames per second" />
 
         <ListPreference
             android:key="bitrate"
             android:title="@string/settings_bitrate"
-            android:defaultValue="500"
-            android:entries="@array/bitrate_entries"
-            android:entryValues="@array/bitrate_values"
-            android:dialogTitle="@string/settings_bitrate" />
+            android:summary="Video bitrate in kbps" />
 
         <ListPreference
             android:key="rotation"
             android:title="@string/settings_rotation"
-            android:defaultValue="auto"
-            android:entries="@array/rotation_entries"
-            android:entryValues="@array/rotation_values"
-            android:dialogTitle="@string/settings_rotation" />
+            android:summary="Video rotation" />
+    </PreferenceCategory>
 
+    <PreferenceCategory android:title="@string/settings_recording">
         <ListPreference
             android:key="recording_mode"
             android:title="@string/settings_recording_mode"
-            android:defaultValue="motion"
-            android:entries="@array/recording_mode_entries"
-            android:entryValues="@array/recording_mode_values"
-            android:dialogTitle="@string/settings_recording_mode" />
+            android:summary="When to record" />
 
-        <EditTextPreference
-            android:key="storage_cap_gb"
+        <ListPreference
+            android:key="storage_cap"
             android:title="@string/settings_storage_cap"
-            android:defaultValue="6"
-            android:inputType="number"
-            android:dialogTitle="@string/settings_storage_cap" />
+            android:summary="Max storage for recordings" />
 
-        <EditTextPreference
+        <ListPreference
             android:key="retention_days"
             android:title="@string/settings_retention_days"
-            android:defaultValue="7"
-            android:inputType="number"
-            android:dialogTitle="@string/settings_retention_days" />
-
+            android:summary="Delete recordings older than this" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Motion Detection">
-
+    <PreferenceCategory android:title="@string/settings_motion">
         <SwitchPreferenceCompat
             android:key="motion_enabled"
             android:title="@string/settings_motion_enabled"
-            android:defaultValue="true" />
+            android:summary="Enable motion detection" />
 
         <ListPreference
             android:key="motion_sensitivity"
             android:title="@string/settings_motion_sensitivity"
-            android:defaultValue="medium"
-            android:entries="@array/sensitivity_entries"
-            android:entryValues="@array/sensitivity_values"
-            android:dialogTitle="@string/settings_motion_sensitivity" />
+            android:summary="Detection sensitivity" />
 
-        <EditTextPreference
+        <ListPreference
             android:key="motion_cooldown"
             android:title="@string/settings_motion_cooldown"
-            android:defaultValue="60"
-            android:inputType="number"
-            android:dialogTitle="@string/settings_motion_cooldown" />
-
+            android:summary="Minimum time between notifications" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Notifications">
-
+    <PreferenceCategory android:title="@string/settings_notifications">
         <EditTextPreference
             android:key="ntfy_server"
             android:title="@string/settings_ntfy_server"
-            android:defaultValue="https://ntfy.sh"
+            android:summary="ntfy server URL for push notifications"
             android:dialogTitle="@string/settings_ntfy_server" />
 
         <EditTextPreference
             android:key="ntfy_topic"
             android:title="@string/settings_ntfy_topic"
+            android:summary="ntfy topic (auto-generated if empty)"
             android:dialogTitle="@string/settings_ntfy_topic" />
-
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Advanced">
-
+    <PreferenceCategory android:title="@string/settings_advanced">
         <ListPreference
             android:key="destination_mode"
             android:title="@string/settings_destination_mode"
-            android:defaultValue="local"
-            android:entries="@array/destination_mode_entries"
-            android:entryValues="@array/destination_mode_values"
-            android:dialogTitle="@string/settings_destination_mode" />
+            android:summary="Where to send the stream" />
 
         <SwitchPreferenceCompat
             android:key="auto_start"
             android:title="@string/settings_auto_start"
-            android:defaultValue="true" />
+            android:summary="Start streaming on boot" />
 
         <SwitchPreferenceCompat
             android:key="nightly_restart"
             android:title="@string/settings_nightly_restart"
-            android:defaultValue="true" />
+            android:summary="Restart encoder nightly for stability" />
 
         <EditTextPreference
             android:key="restart_time"
             android:title="@string/settings_restart_time"
-            android:defaultValue="04:00"
-            android:inputType="time"
+            android:summary="Time for nightly restart (HH:MM)"
             android:dialogTitle="@string/settings_restart_time" />
 
         <Preference
             android:key="reset_token"
             android:title="@string/settings_reset_token"
-            android:summary="Generates a new pairing token. Existing viewers will need to re-pair." />
-
+            android:summary="Generate new pairing token" />
     </PreferenceCategory>
+
 </PreferenceScreen>
