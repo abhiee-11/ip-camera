@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import com.freecam.camera.data.AppLog
 import com.freecam.camera.data.Settings
 import com.pedro.library.view.OpenGlView
-import com.pedro.library.rtsp.RtspCamera2
+import com.pedro.rtspserver.RtspServerCamera2
 import com.pedro.common.ConnectChecker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,13 +22,13 @@ class StreamController(
 
     private val scope = CoroutineScope(Dispatchers.IO)
     private val job = Job()
-    private var rtspCamera: RtspCamera2? = null
+    private var rtspServerCamera: RtspServerCamera2? = null
     private var isRunning = false
 
     fun start() {
         if (isRunning) return
         isRunning = true
-        AppLog.getInstance(context).log("StreamController", "Starting RTSP stream")
+        AppLog.getInstance(context).log("StreamController", "Starting RTSP server")
 
         scope.launch(job) {
             try {
@@ -37,25 +37,29 @@ class StreamController(
                 val fps = settings.frameRate
                 val bitrateKbps = settings.bitrateKbps
 
-                // Create a dummy OpenGlView for RtspCamera2 (required by 2.4.x API)
+                // Create a dummy OpenGlView for RtspServerCamera2 (required by API)
                 // We don't actually display it, just use it for the encoder
                 val dummyView = OpenGlView(context).apply {
                     layoutParams = ViewGroup.LayoutParams(1, 1)
                 }
 
-                rtspCamera = RtspCamera2(dummyView, object : ConnectChecker {
+                rtspServerCamera = RtspServerCamera2(dummyView, object : ConnectChecker {
+                    override fun onConnectionStarted(url: String) {
+                        AppLog.getInstance(context).log("StreamController", "RTSP server started: $url")
+                    }
+
                     override fun onConnectionSuccess() {
-                        AppLog.getInstance(context).log("StreamController", "RTSP connection success")
+                        AppLog.getInstance(context).log("StreamController", "RTSP server connection success")
                         onStarted()
                     }
 
                     override fun onConnectionFailed(reason: String) {
-                        AppLog.getInstance(context).logError("StreamController", "RTSP connection failed: $reason")
-                        onError("Connection failed: $reason")
+                        AppLog.getInstance(context).logError("StreamController", "RTSP server failed: $reason")
+                        onError("Server failed: $reason")
                     }
 
                     override fun onDisconnect() {
-                        AppLog.getInstance(context).log("StreamController", "RTSP disconnected")
+                        AppLog.getInstance(context).log("StreamController", "RTSP client disconnected")
                     }
 
                     override fun onAuthError() {
@@ -67,27 +71,22 @@ class StreamController(
                         AppLog.getInstance(context).log("StreamController", "RTSP auth success")
                     }
 
-                    override fun onConnectionStarted(url: String) {
-                        AppLog.getInstance(context).log("StreamController", "RTSP connection started: $url")
-                    }
-
                     override fun onNewBitrate(bitrate: Long) {
                         AppLog.getInstance(context).log("StreamController", "RTSP new bitrate: $bitrate")
                     }
-                })
+                }, Settings.rtspPort)
 
-                // 2.4.x API: prepareVideo(width, height, fps, bitrate, rotation)
-                rtspCamera!!.prepareVideo(
+                // RtspServerCamera2 API: prepareVideo(width, height, fps, bitrate, rotation)
+                rtspServerCamera!!.prepareVideo(
                     width, height, fps, bitrateKbps * 1000, 0
                 )
-                // 2.4.x API: prepareAudio(sampleRate, bitrate, isStereo)
-                rtspCamera!!.prepareAudio(Settings.audioSampleRate, Settings.audioBitrateKbps, Settings.audioStereo)
+                rtspServerCamera!!.prepareAudio(Settings.audioSampleRate, Settings.audioBitrateKbps, Settings.audioStereo)
 
-                rtspCamera!!.getStreamClient().setAuthorization(Settings.rtspUser, Settings.rtspPassword)
-                rtspCamera!!.startStream("rtsp://0.0.0.0:${Settings.rtspPort}/${Settings.rtspPath}")
+                rtspServerCamera!!.getStreamClient().setAuthorization(Settings.rtspUser, Settings.rtspPassword)
+                rtspServerCamera!!.startStream()
 
             } catch (e: Exception) {
-                AppLog.getInstance(context).logError("StreamController", "Failed to start stream", e)
+                AppLog.getInstance(context).logError("StreamController", "Failed to start RTSP server", e)
                 onError("Failed to start: ${e.message}")
                 stop()
             }
@@ -99,12 +98,12 @@ class StreamController(
         isRunning = false
         job.cancel()
 
-        rtspCamera?.stopStream()
-        rtspCamera?.stopPreview()
+        rtspServerCamera?.stopStream()
+        rtspServerCamera?.stopPreview()
 
-        rtspCamera = null
+        rtspServerCamera = null
 
-        AppLog.getInstance(context).log("StreamController", "RTSP stream stopped")
+        AppLog.getInstance(context).log("StreamController", "RTSP server stopped")
     }
 
     fun isRunning(): Boolean = isRunning
