@@ -1,0 +1,26 @@
+# Gradle
+build/
+.gradle/
+
+# IDE
+.idea/
+*.iml
+
+# Local config
+local.properties
+
+# Build outputs
+*.apk
+*.aab
+
+# Keystores
+*.keystore
+*.jks
+
+# Other
+captures/
+dist/
+
+# Local Java/Gradle (keep _parked tracked)
+java17/
+gradle-8.13/
