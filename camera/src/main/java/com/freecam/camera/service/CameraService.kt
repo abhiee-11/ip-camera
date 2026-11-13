@@ -16,12 +16,16 @@ import androidx.core.app.NotificationCompat
 import com.freecam.camera.R
 import com.freecam.camera.data.AppLog
 import com.freecam.camera.data.Settings
+import com.freecam.camera.http.ApiServer
+import com.freecam.camera.http.MotionEvent
+import com.freecam.camera.http.RecordingInfo
 import com.freecam.camera.stream.StreamController
 import com.freecam.camera.ui.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
@@ -56,6 +60,7 @@ class CameraService : Service() {
     private val uptimeJob = Job()
     private val watchdogJob = Job()
     private var streamController: StreamController? = null
+    private var apiServer: ApiServer? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -120,8 +125,24 @@ class CameraService : Service() {
         } else {
             startForeground(NOTIFICATION_ID, buildNotification())
         }
-        
-        streamController = StreamController.getInstance(this, settings, 
+
+        // Start HTTP API server
+        apiServer = ApiServer(
+            context = this,
+            settings = settings,
+            appLog = appLog,
+            onStatus = { buildStatusJson() },
+            onRecordings = { getRecordings() },
+            onEvents = { from, to -> getEvents(from, to) }
+        )
+        try {
+            apiServer?.start()
+            appLog.log("CameraService", "API server started on port ${Settings.apiPort}")
+        } catch (e: Exception) {
+            appLog.logError("CameraService", "Failed to start API server", e)
+        }
+
+        streamController = StreamController.getInstance(this, settings,
             onError = { msg ->
                 hasError = true
                 errorMessage = msg
@@ -166,6 +187,10 @@ class CameraService : Service() {
         streamController?.stop()
         StreamController.clearInstance()
         streamController = null
+
+        apiServer?.stop()
+        apiServer = null
+
         stopForeground(true)
         stopSelf()
         releaseLocks()
@@ -203,8 +228,55 @@ class CameraService : Service() {
         streamControllerJob.cancel()
         uptimeJob.cancel()
         watchdogJob.cancel()
+        apiServer?.stop()
         releaseLocks()
         super.onDestroy()
+    }
+
+    private fun buildStatusJson(): String {
+        val ip = getLocalIpAddress()
+        val rtspUrl = "rtsp://$ip:${Settings.rtspPort}/${Settings.rtspPath}"
+        val apiUrl = "http://$ip:${Settings.apiPort}"
+        return """{"running":$isRunning,"error":${if (hasError) "\"$errorMessage\"" else "null"},"uptime_ms":$uptimeMillis,"rtsp_url":"$rtspUrl","api_url":"$apiUrl","camera_name":"${settings.cameraName}","resolution":"${settings.resolution}","fps":${settings.frameRate}}"""
+    }
+
+    private fun getRecordings(): List<RecordingInfo> {
+        val recordingsDir = File(getExternalFilesDir(null), "recordings")
+        if (!recordingsDir.exists()) return emptyList()
+        return recordingsDir.listFiles()?.filter { it.isFile && it.name.endsWith(".mp4") }?.map { file ->
+            RecordingInfo(
+                filename = file.name,
+                path = "/recordings/${file.name}",
+                size = file.length(),
+                createdAt = file.lastModified(),
+                durationSec = 0 // TODO: extract duration from MP4
+            )
+        }?.sortedByDescending { it.createdAt } ?: emptyList()
+    }
+
+    private fun getEvents(from: Long, to: Long): List<MotionEvent> {
+        // TODO: Read from events JSON file
+        return emptyList()
+    }
+
+    private fun getLocalIpAddress(): String {
+        try {
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
+            while (interfaces.hasMoreElements()) {
+                val iface = interfaces.nextElement()
+                if (iface.isLoopback || !iface.isUp) continue
+                val addresses = iface.inetAddresses
+                while (addresses.hasMoreElements()) {
+                    val addr = addresses.nextElement()
+                    if (addr is java.net.Inet4Address && !addr.isLoopbackAddress) {
+                        return addr.hostAddress
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            appLog.logError("CameraService", "Error getting IP", e)
+        }
+        return "0.0.0.0"
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

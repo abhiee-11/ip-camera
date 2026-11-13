@@ -129,6 +129,11 @@ curl -H "Authorization: Bearer <token>" -H "Range: bytes=0-1023" http://100.64.x
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-11-13 | Initial M0 skeleton |
+| 1.1.0 | 2026-11-13 | M1 fix: RTSP server via pedroSG94/RTSP-Server 1.2.1 |
+
+## Git Push Log
+
+- **2026-11-13 13:15**: Push failed - waiting for GitHub authentication (PAT/gh/SSH). Will retry after next milestone.
 
 ## Future Improvements
 

@@ -37,6 +37,7 @@ class Settings(private val prefs: SharedPreferences) {
         const val rtspPath = "live"
         const val rtspUser = "freecam"
         const val rtspPassword = "freecam"
+        const val apiPort = 8080
     }
 
     // Camera settings
