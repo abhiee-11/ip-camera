@@ -1,12 +1,13 @@
 package com.freecam.camera.stream
 
 import android.content.Context
-import android.util.Log
+import android.view.View
+import android.view.ViewGroup
 import com.freecam.camera.data.AppLog
 import com.freecam.camera.data.Settings
-import com.pedro.encoder.input.video.CameraHelper
-import com.pedro.rtplibrary.rtsp.RtspCamera2
-import com.pedro.rtplibrary.rtsp.RtspServer
+import com.pedro.library.view.OpenGlView
+import com.pedro.library.rtsp.RtspCamera2
+import com.pedro.common.ConnectChecker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,61 +22,70 @@ class StreamController(
 
     private val scope = CoroutineScope(Dispatchers.IO)
     private val job = Job()
-    private var rtspCamera2: RtspCamera2? = null
-    private var rtspServer: RtspServer? = null
+    private var rtspCamera: RtspCamera2? = null
     private var isRunning = false
 
     fun start() {
         if (isRunning) return
         isRunning = true
-        AppLog.getInstance(context).log("StreamController", "Starting RTSP server")
-        
+        AppLog.getInstance(context).log("StreamController", "Starting RTSP stream")
+
         scope.launch(job) {
             try {
-                val width = settings.resolutionWidth
-                val height = settings.resolutionHeight
+                val width = settings.getResolutionWidth()
+                val height = settings.getResolutionHeight()
                 val fps = settings.frameRate
                 val bitrateKbps = settings.bitrateKbps
-                
-                rtspCamera2 = RtspCamera2(context, object : RtspCamera2.Callback {
+
+                // Create a dummy OpenGlView for RtspCamera2 (required by 2.4.x API)
+                // We don't actually display it, just use it for the encoder
+                val dummyView = OpenGlView(context).apply {
+                    layoutParams = ViewGroup.LayoutParams(1, 1)
+                }
+
+                rtspCamera = RtspCamera2(dummyView, object : ConnectChecker {
                     override fun onConnectionSuccess() {
                         AppLog.getInstance(context).log("StreamController", "RTSP connection success")
                         onStarted()
                     }
-                    
+
                     override fun onConnectionFailed(reason: String) {
                         AppLog.getInstance(context).logError("StreamController", "RTSP connection failed: $reason")
                         onError("Connection failed: $reason")
                     }
-                    
+
                     override fun onDisconnect() {
                         AppLog.getInstance(context).log("StreamController", "RTSP disconnected")
                     }
-                    
+
                     override fun onAuthError() {
                         AppLog.getInstance(context).logError("StreamController", "RTSP auth error")
                         onError("Authentication error")
                     }
-                    
-                    override fun onBitrateUpdate(bitrate: Long) {
-                        // Bitrate changed
+
+                    override fun onAuthSuccess() {
+                        AppLog.getInstance(context).log("StreamController", "RTSP auth success")
+                    }
+
+                    override fun onConnectionStarted(url: String) {
+                        AppLog.getInstance(context).log("StreamController", "RTSP connection started: $url")
+                    }
+
+                    override fun onNewBitrate(bitrate: Long) {
+                        AppLog.getInstance(context).log("StreamController", "RTSP new bitrate: $bitrate")
                     }
                 })
-                
-                rtspCamera2!!.setCameraFacing(CameraHelper.Facing.BACK)
-                rtspCamera2!!.prepareVideo(
-                    width, height, fps, bitrateKbps * 1000,
-                    false, // rotation
-                    Settings.h264Profile, Settings.h264Level
+
+                // 2.4.x API: prepareVideo(width, height, fps, bitrate, rotation)
+                rtspCamera!!.prepareVideo(
+                    width, height, fps, bitrateKbps * 1000, 0
                 )
-                rtspCamera2!!.prepareAudio(Settings.audioSampleRate, Settings.audioStereo, Settings.audioBitrateKbps)
-                
-                rtspServer = RtspServer(context, Settings.rtspPort)
-                rtspServer!!.start()
-                
-                rtspCamera2!!.setAuthorization(settings.rtspUser, settings.rtspPassword)
-                rtspCamera2!!.startStream(rtspServer!!.getUrl(settings.rtspPath))
-                
+                // 2.4.x API: prepareAudio(sampleRate, bitrate, isStereo)
+                rtspCamera!!.prepareAudio(Settings.audioSampleRate, Settings.audioBitrateKbps, Settings.audioStereo)
+
+                rtspCamera!!.getStreamClient().setAuthorization(Settings.rtspUser, Settings.rtspPassword)
+                rtspCamera!!.startStream("rtsp://0.0.0.0:${Settings.rtspPort}/${Settings.rtspPath}")
+
             } catch (e: Exception) {
                 AppLog.getInstance(context).logError("StreamController", "Failed to start stream", e)
                 onError("Failed to start: ${e.message}")
@@ -88,15 +98,13 @@ class StreamController(
         if (!isRunning) return
         isRunning = false
         job.cancel()
-        
-        rtspCamera2?.stopStream()
-        rtspCamera2?.stopPreview()
-        rtspServer?.stop()
-        
-        rtspCamera2 = null
-        rtspServer = null
-        
-        AppLog.getInstance(context).log("StreamController", "RTSP server stopped")
+
+        rtspCamera?.stopStream()
+        rtspCamera?.stopPreview()
+
+        rtspCamera = null
+
+        AppLog.getInstance(context).log("StreamController", "RTSP stream stopped")
     }
 
     fun isRunning(): Boolean = isRunning
@@ -104,8 +112,8 @@ class StreamController(
     companion object {
         private var instance: StreamController? = null
         fun getInstance(
-            context: Context, 
-            settings: Settings, 
+            context: Context,
+            settings: Settings,
             onError: (String) -> Unit,
             onStarted: () -> Unit
         ): StreamController {

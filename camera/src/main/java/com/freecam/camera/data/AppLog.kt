@@ -33,9 +33,7 @@ class AppLog(private val context: Context) {
         logs.add(line)
         while (logs.size > maxLines) logs.poll()
         appendToFile(line)
-        if (BuildConfig.DEBUG) {
-            Log.d(tag, message, throwable)
-        }
+        Log.d(tag, message, throwable)
     }
 
     fun logError(tag: String, message: String, throwable: Throwable? = null) {
@@ -72,4 +70,12 @@ class AppLog(private val context: Context) {
     }
 
     fun copyAll(): String = logs.joinToString("\n")
+
+    companion object {
+        @Suppress("UNUSED_PARAMETER")
+        fun getInstance(context: Context): AppLog {
+            // Simple singleton - could be improved with synchronization
+            return AppLog(context)
+        }
+    }
 }

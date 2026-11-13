@@ -16,6 +16,7 @@ import androidx.core.app.NotificationCompat
 import com.freecam.camera.R
 import com.freecam.camera.data.AppLog
 import com.freecam.camera.data.Settings
+import com.freecam.camera.stream.StreamController
 import com.freecam.camera.ui.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +55,7 @@ class CameraService : Service() {
     private val streamControllerJob = Job()
     private val uptimeJob = Job()
     private val watchdogJob = Job()
+    private var streamController: StreamController? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -113,12 +115,28 @@ class CameraService : Service() {
         errorMessage = ""
         startTime = System.currentTimeMillis()
 
-        startForeground(NOTIFICATION_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA)
-        scope.launch(streamControllerJob) {
-            // TODO: Initialize StreamController with RootEncoder RTSP server
-            // This will be implemented in M1
-            appLog.log("CameraService", "StreamController would start here (M1)")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA)
+        } else {
+            startForeground(NOTIFICATION_ID, buildNotification())
         }
+        
+        streamController = StreamController.getInstance(this, settings, 
+            onError = { msg ->
+                hasError = true
+                errorMessage = msg
+                appLog.logError("CameraService", "Stream error: $msg")
+                updateNotification()
+            },
+            onStarted = {
+                appLog.log("CameraService", "Stream started successfully")
+                hasError = false
+                errorMessage = ""
+                updateNotification()
+            }
+        )
+        streamController?.start()
+
         scope.launch(uptimeJob) {
             while (isRunning) {
                 uptimeMillis = System.currentTimeMillis() - startTime
@@ -130,7 +148,6 @@ class CameraService : Service() {
             while (isRunning) {
                 kotlinx.coroutines.delay(60_000)
                 if (isRunning) {
-                    // TODO: Check encoder health
                     appLog.log("CameraService", "Watchdog check")
                 }
             }
@@ -146,7 +163,9 @@ class CameraService : Service() {
         streamControllerJob.cancel()
         uptimeJob.cancel()
         watchdogJob.cancel()
-        // TODO: Stop StreamController
+        streamController?.stop()
+        StreamController.clearInstance()
+        streamController = null
         stopForeground(true)
         stopSelf()
         releaseLocks()
@@ -166,9 +185,9 @@ class CameraService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("FreeCam Camera")
             .setContentText(statusText)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pendingIntent)
-            .addAction(R.drawable.ic_launcher_foreground, "Stop", stopPendingIntent)
+            .addAction(R.mipmap.ic_launcher, "Stop", stopPendingIntent)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
@@ -181,7 +200,9 @@ class CameraService : Service() {
     }
 
     override fun onDestroy() {
-        scope.cancel()
+        streamControllerJob.cancel()
+        uptimeJob.cancel()
+        watchdogJob.cancel()
         releaseLocks()
         super.onDestroy()
     }
