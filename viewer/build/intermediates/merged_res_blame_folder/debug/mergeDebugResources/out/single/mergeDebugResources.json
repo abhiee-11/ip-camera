@@ -1,0 +1,98 @@
+[
+    {
+        "merged": "com.freecam.viewer-debug-47:/layout_activity_history.xml.flat",
+        "source": "com.freecam.viewer-main-49:/layout/activity_history.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/mipmap-xxxhdpi_ic_launcher.xml.flat",
+        "source": "com.freecam.viewer-main-49:/mipmap-xxxhdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/mipmap-xxhdpi_ic_launcher.xml.flat",
+        "source": "com.freecam.viewer-main-49:/mipmap-xxhdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/layout_item_recording.xml.flat",
+        "source": "com.freecam.viewer-main-49:/layout/item_recording.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/layout_activity_player.xml.flat",
+        "source": "com.freecam.viewer-main-49:/layout/activity_player.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/mipmap-xhdpi_ic_launcher_round.xml.flat",
+        "source": "com.freecam.viewer-main-49:/mipmap-xhdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/layout_activity_main.xml.flat",
+        "source": "com.freecam.viewer-main-49:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/mipmap-xxxhdpi_ic_launcher_round.xml.flat",
+        "source": "com.freecam.viewer-main-49:/mipmap-xxxhdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/layout_item_event.xml.flat",
+        "source": "com.freecam.viewer-main-49:/layout/item_event.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/drawable_bg_status_dot_red.xml.flat",
+        "source": "com.freecam.viewer-main-49:/drawable/bg_status_dot_red.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/layout_item_day_chip.xml.flat",
+        "source": "com.freecam.viewer-main-49:/layout/item_day_chip.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/layout_activity_add_camera.xml.flat",
+        "source": "com.freecam.viewer-main-49:/layout/activity_add_camera.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/mipmap-mdpi_ic_launcher_round.xml.flat",
+        "source": "com.freecam.viewer-main-49:/mipmap-mdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/mipmap-xhdpi_ic_launcher.xml.flat",
+        "source": "com.freecam.viewer-main-49:/mipmap-xhdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/mipmap-hdpi_ic_launcher_round.xml.flat",
+        "source": "com.freecam.viewer-main-49:/mipmap-hdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/mipmap-xxhdpi_ic_launcher_round.xml.flat",
+        "source": "com.freecam.viewer-main-49:/mipmap-xxhdpi/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/drawable_ic_add.xml.flat",
+        "source": "com.freecam.viewer-main-49:/drawable/ic_add.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/mipmap-hdpi_ic_launcher.xml.flat",
+        "source": "com.freecam.viewer-main-49:/mipmap-hdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/layout_activity_live.xml.flat",
+        "source": "com.freecam.viewer-main-49:/layout/activity_live.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/layout_activity_settings.xml.flat",
+        "source": "com.freecam.viewer-main-49:/layout/activity_settings.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/layout_activity_events.xml.flat",
+        "source": "com.freecam.viewer-main-49:/layout/activity_events.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/drawable_bg_status_dot_green.xml.flat",
+        "source": "com.freecam.viewer-main-49:/drawable/bg_status_dot_green.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/mipmap-mdpi_ic_launcher.xml.flat",
+        "source": "com.freecam.viewer-main-49:/mipmap-mdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.freecam.viewer-debug-47:/layout_item_camera.xml.flat",
+        "source": "com.freecam.viewer-main-49:/layout/item_camera.xml"
+    }
+]

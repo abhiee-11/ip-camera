@@ -1,0 +1,463 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.5.0" type="incidents">
+
+    <incident
+        id="RedundantLabel"
+        severity="warning"
+        message="Redundant label can be removed">
+        <fix-attribute
+            description="Delete label"
+            namespace="http://schemas.android.com/apk/res/android"
+            attribute="label"/>
+        <location
+            file="${:viewer*debug*MAIN*sourceProvider*0*manifest*0}"
+            line="25"
+            column="13"
+            startOffset="978"
+            endLine="25"
+            endColumn="45"
+            endOffset="1010"/>
+    </incident>
+
+    <incident
+        id="DisableBaselineAlignment"
+        severity="warning"
+        message="Set `android:baselineAligned=&quot;false&quot;` on this element for better performance">
+        <fix-attribute
+            description="Set baselineAligned=&quot;false&quot;"
+            robot="true"
+            independent="true"
+            namespace="http://schemas.android.com/apk/res/android"
+            attribute="baselineAligned"
+            value="false"/>
+        <location
+            file="${:viewer*debug*MAIN*sourceProvider*0*resDir*0}/layout/activity_add_camera.xml"
+            line="100"
+            column="18"
+            startOffset="4598"
+            endLine="100"
+            endColumn="30"
+            endOffset="4610"/>
+    </incident>
+
+    <incident
+        id="HardcodedText"
+        severity="warning"
+        message="Hardcoded string &quot;8554&quot;, should use `@string` resource">
+        <location
+            file="${:viewer*debug*MAIN*sourceProvider*0*resDir*0}/layout/activity_add_camera.xml"
+            line="119"
+            column="29"
+            startOffset="5639"
+            endLine="119"
+            endColumn="48"
+            endOffset="5658"/>
+    </incident>
+
+    <incident
+        id="HardcodedText"
+        severity="warning"
+        message="Hardcoded string &quot;8080&quot;, should use `@string` resource">
+        <location
+            file="${:viewer*debug*MAIN*sourceProvider*0*resDir*0}/layout/activity_add_camera.xml"
+            line="135"
+            column="29"
+            startOffset="6547"
+            endLine="135"
+            endColumn="48"
+            endOffset="6566"/>
+    </incident>
+
+    <incident
+        id="HardcodedText"
+        severity="warning"
+        message="Hardcoded string &quot;⏸&quot;, should use `@string` resource">
+        <location
+            file="${:viewer*debug*MAIN*sourceProvider*0*resDir*0}/layout/activity_player.xml"
+            line="74"
+            column="29"
+            startOffset="3335"
+            endLine="74"
+            endColumn="45"
+            endOffset="3351"/>
+    </incident>
+
+    <incident
+        id="ContentDescription"
+        severity="warning"
+        message="Missing `contentDescription` attribute on image">
+        <fix-alternatives>
+            <fix-attribute
+                description="Set contentDescription"
+                namespace="http://schemas.android.com/apk/res/android"
+                attribute="contentDescription"
+                value="TODO"
+                point="4"
+                mark="0"/>
+            <fix-attribute
+                description="Set importantForAccessibility=&quot;no&quot;"
+                namespace="http://schemas.android.com/apk/res/android"
+                attribute="importantForAccessibility"
+                value="no"/>
+        </fix-alternatives>
+        <location
+            file="${:viewer*debug*MAIN*sourceProvider*0*resDir*0}/layout/item_camera.xml"
+            line="19"
+            column="14"
+            startOffset="716"
+            endLine="19"
+            endColumn="23"
+            endOffset="725"/>
+    </incident>
+
+    <incident
+        id="ContentDescription"
+        severity="warning"
+        message="Missing `contentDescription` attribute on image">
+        <fix-alternatives>
+            <fix-attribute
+                description="Set contentDescription"
+                namespace="http://schemas.android.com/apk/res/android"
+                attribute="contentDescription"
+                value="TODO"
+                point="4"
+                mark="0"/>
+            <fix-attribute
+                description="Set importantForAccessibility=&quot;no&quot;"
+                namespace="http://schemas.android.com/apk/res/android"
+                attribute="importantForAccessibility"
+                value="no"/>
+        </fix-alternatives>
+        <location
+            file="${:viewer*debug*MAIN*sourceProvider*0*resDir*0}/layout/item_event.xml"
+            line="19"
+            column="14"
+            startOffset="716"
+            endLine="19"
+            endColumn="23"
+            endOffset="725"/>
+    </incident>
+
+    <incident
+        id="ContentDescription"
+        severity="warning"
+        message="Missing `contentDescription` attribute on image">
+        <fix-alternatives>
+            <fix-attribute
+                description="Set contentDescription"
+                namespace="http://schemas.android.com/apk/res/android"
+                attribute="contentDescription"
+                value="TODO"
+                point="4"
+                mark="0"/>
+            <fix-attribute
+                description="Set importantForAccessibility=&quot;no&quot;"
+                namespace="http://schemas.android.com/apk/res/android"
+                attribute="importantForAccessibility"
+                value="no"/>
+        </fix-alternatives>
+        <location
+            file="${:viewer*debug*MAIN*sourceProvider*0*resDir*0}/layout/item_recording.xml"
+            line="19"
+            column="14"
+            startOffset="716"
+            endLine="19"
+            endColumn="23"
+            endOffset="725"/>
+    </incident>
+
+    <incident
+        id="DataBindingWithoutKapt"
+        severity="warning"
+        message="If you plan to use data binding in a Kotlin project, you should apply the kotlin-kapt plugin.">
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="27"
+            column="9"
+            startOffset="661"
+            endLine="27"
+            endColumn="27"
+            endOffset="679"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.core:core-ktx than 1.13.1 is available: 1.19.1">
+        <fix-replace
+            description="Change to 1.19.1"
+            family="Update versions"
+            oldString="1.13.1"
+            replacement="1.19.1"
+            priority="0"/>
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="43"
+            column="20"
+            startOffset="1033"
+            endLine="43"
+            endColumn="51"
+            endOffset="1064"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.appcompat:appcompat than 1.7.0 is available: 1.8.0">
+        <fix-replace
+            description="Change to 1.8.0"
+            family="Update versions"
+            oldString="1.7.0"
+            replacement="1.8.0"
+            priority="0"/>
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="44"
+            column="20"
+            startOffset="1084"
+            endLine="44"
+            endColumn="56"
+            endOffset="1120"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of com.google.android.material:material than 1.12.0 is available: 1.14.0">
+        <fix-replace
+            description="Change to 1.14.0"
+            family="Update versions"
+            oldString="1.12.0"
+            replacement="1.14.0"
+            priority="0"/>
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="45"
+            column="20"
+            startOffset="1140"
+            endLine="45"
+            endColumn="65"
+            endOffset="1185"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.activity:activity-ktx than 1.9.2 is available: 1.13.0">
+        <fix-replace
+            description="Change to 1.13.0"
+            family="Update versions"
+            oldString="1.9.2"
+            replacement="1.13.0"
+            priority="0"/>
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="46"
+            column="20"
+            startOffset="1205"
+            endLine="46"
+            endColumn="58"
+            endOffset="1243"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.fragment:fragment-ktx than 1.8.3 is available: 1.9.1">
+        <fix-replace
+            description="Change to 1.9.1"
+            family="Update versions"
+            oldString="1.8.3"
+            replacement="1.9.1"
+            priority="0"/>
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="47"
+            column="20"
+            startOffset="1263"
+            endLine="47"
+            endColumn="58"
+            endOffset="1301"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.lifecycle:lifecycle-runtime-ktx than 2.8.4 is available: 2.11.0">
+        <fix-replace
+            description="Change to 2.11.0"
+            family="Update versions"
+            oldString="2.8.4"
+            replacement="2.11.0"
+            priority="0"/>
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="48"
+            column="20"
+            startOffset="1321"
+            endLine="48"
+            endColumn="68"
+            endOffset="1369"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.lifecycle:lifecycle-viewmodel-ktx than 2.8.4 is available: 2.11.0">
+        <fix-replace
+            description="Change to 2.11.0"
+            family="Update versions"
+            oldString="2.8.4"
+            replacement="2.11.0"
+            priority="0"/>
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="49"
+            column="20"
+            startOffset="1389"
+            endLine="49"
+            endColumn="70"
+            endOffset="1439"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.media3:media3-exoplayer than 1.4.1 is available: 1.11.1">
+        <fix-replace
+            description="Change to 1.11.1"
+            family="Update versions"
+            oldString="1.4.1"
+            replacement="1.11.1"
+            priority="0"/>
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="50"
+            column="20"
+            startOffset="1459"
+            endLine="50"
+            endColumn="60"
+            endOffset="1499"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.media3:media3-exoplayer-rtsp than 1.4.1 is available: 1.11.1">
+        <fix-replace
+            description="Change to 1.11.1"
+            family="Update versions"
+            oldString="1.4.1"
+            replacement="1.11.1"
+            priority="0"/>
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="51"
+            column="20"
+            startOffset="1519"
+            endLine="51"
+            endColumn="65"
+            endOffset="1564"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.media3:media3-ui than 1.4.1 is available: 1.11.1">
+        <fix-replace
+            description="Change to 1.11.1"
+            family="Update versions"
+            oldString="1.4.1"
+            replacement="1.11.1"
+            priority="0"/>
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="52"
+            column="20"
+            startOffset="1584"
+            endLine="52"
+            endColumn="53"
+            endOffset="1617"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.media3:media3-common than 1.4.1 is available: 1.11.1">
+        <fix-replace
+            description="Change to 1.11.1"
+            family="Update versions"
+            oldString="1.4.1"
+            replacement="1.11.1"
+            priority="0"/>
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="53"
+            column="20"
+            startOffset="1637"
+            endLine="53"
+            endColumn="57"
+            endOffset="1674"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of androidx.media3:media3-datasource than 1.4.1 is available: 1.11.1">
+        <fix-replace
+            description="Change to 1.11.1"
+            family="Update versions"
+            oldString="1.4.1"
+            replacement="1.11.1"
+            priority="0"/>
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="54"
+            column="20"
+            startOffset="1694"
+            endLine="54"
+            endColumn="61"
+            endOffset="1735"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-serialization-json than 1.6.3 is available: 1.11.0">
+        <fix-replace
+            description="Change to 1.11.0"
+            family="Update versions"
+            oldString="1.6.3"
+            replacement="1.11.0"
+            priority="0"/>
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="58"
+            column="20"
+            startOffset="1949"
+            endLine="58"
+            endColumn="76"
+            endOffset="2005"/>
+    </incident>
+
+    <incident
+        id="GradleDependency"
+        severity="warning"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-android than 1.8.0 is available: 1.11.0">
+        <fix-replace
+            description="Change to 1.11.0"
+            family="Update versions"
+            oldString="1.8.0"
+            replacement="1.11.0"
+            priority="0"/>
+        <location
+            file="${:viewer*projectDir}/build.gradle"
+            line="59"
+            column="20"
+            startOffset="2025"
+            endLine="59"
+            endColumn="76"
+            endOffset="2081"/>
+    </incident>
+
+</incidents>

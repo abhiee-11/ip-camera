@@ -1,0 +1,95 @@
+<resources>
+    <string-array name="facing_entries">
+        <item>@string/facing_back</item>
+        <item>@string/facing_front</item>
+    </string-array>
+    <string-array name="facing_values">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+
+    <string-array name="resolution_entries">
+        <item>640x480</item>
+        <item>854x480</item>
+        <item>1280x720</item>
+    </string-array>
+    <string-array name="resolution_values">
+        <item>640x480</item>
+        <item>854x480</item>
+        <item>1280x720</item>
+    </string-array>
+
+    <string-array name="framerate_entries">
+        <item>10</item>
+        <item>15</item>
+        <item>20</item>
+        <item>25</item>
+    </string-array>
+    <string-array name="framerate_values">
+        <item>10</item>
+        <item>15</item>
+        <item>20</item>
+        <item>25</item>
+    </string-array>
+
+    <string-array name="bitrate_entries">
+        <item>250 kbps</item>
+        <item>500 kbps</item>
+        <item>800 kbps</item>
+        <item>1200 kbps</item>
+        <item>1500 kbps</item>
+    </string-array>
+    <string-array name="bitrate_values">
+        <item>250</item>
+        <item>500</item>
+        <item>800</item>
+        <item>1200</item>
+        <item>1500</item>
+    </string-array>
+
+    <string-array name="rotation_entries">
+        <item>Auto</item>
+        <item>0°</item>
+        <item>90°</item>
+        <item>180°</item>
+        <item>270°</item>
+    </string-array>
+    <string-array name="rotation_values">
+        <item>auto</item>
+        <item>0</item>
+        <item>90</item>
+        <item>180</item>
+        <item>270</item>
+    </string-array>
+
+    <string-array name="recording_mode_entries">
+        <item>@string/recording_off</item>
+        <item>@string/recording_motion</item>
+        <item>@string/recording_continuous</item>
+    </string-array>
+    <string-array name="recording_mode_values">
+        <item>off</item>
+        <item>motion</item>
+        <item>continuous</item>
+    </string-array>
+
+    <string-array name="sensitivity_entries">
+        <item>@string/sensitivity_low</item>
+        <item>@string/sensitivity_medium</item>
+        <item>@string/sensitivity_high</item>
+    </string-array>
+    <string-array name="sensitivity_values">
+        <item>low</item>
+        <item>medium</item>
+        <item>high</item>
+    </string-array>
+
+    <string-array name="destination_mode_entries">
+        <item>@string/mode_local</item>
+        <item>@string/mode_relay_disabled</item>
+    </string-array>
+    <string-array name="destination_mode_values">
+        <item>local</item>
+        <item>relay</item>
+    </string-array>
+</resources>

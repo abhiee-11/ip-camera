@@ -1,0 +1,70 @@
+<resources>
+    <string name="app_name">FreeCam Viewer</string>
+    <string name="add_camera_title">Add Camera</string>
+    <string name="live_title">Live</string>
+    <string name="history_title">History</string>
+    <string name="events_title">Events</string>
+    <string name="player_title">Playback</string>
+    <string name="settings_title">Settings</string>
+
+    <!-- Main screen -->
+    <string name="no_cameras">No cameras added</string>
+    <string name="add_camera_fab">Add Camera</string>
+    <string name="camera_online">Online</string>
+    <string name="camera_offline">Offline</string>
+    <string name="last_seen">Last seen: %s</string>
+    <string name="menu_rename">Rename</string>
+    <string name="menu_delete">Delete</string>
+
+    <!-- Add camera -->
+    <string name="add_via_qr">Scan QR Code</string>
+    <string name="add_manually">Enter Manually</string>
+    <string name="manual_name">Camera Name</string>
+    <string name="manual_host">Host / IP</string>
+    <string name="manual_rtsp_port">RTSP Port</string>
+    <string name="manual_http_port">HTTP Port</string>
+    <string name="manual_token">Token</string>
+    <string name="btn_test_connect">Test Connection</string>
+    <string name="btn_save">Save</string>
+    <string name="connection_success">Connection successful!</string>
+    <string name="connection_failed">Connection failed. Is Tailscale connected?</string>
+
+    <!-- Live -->
+    <string name="connecting">Connecting…</string>
+    <string name="live">Live</string>
+    <string name="reconnecting">Reconnecting…</string>
+    <string name="error_stream">Stream error</string>
+    <string name="btn_history">History</string>
+    <string name="btn_events">Events</string>
+
+    <!-- History -->
+    <string name="no_recordings_day">No recordings for this day</string>
+    <string name="recording_duration">Duration: %s</string>
+    <string name="recording_size">Size: %s</string>
+
+    <!-- Player -->
+    <string name="speed_1x">1x</string>
+    <string name="speed_2x">2x</string>
+    <string name="speed_4x">4x</string>
+    <string name="skip_back">-10s</string>
+    <string name="skip_forward">+10s</string>
+
+    <!-- Events -->
+    <string name="no_events">No motion events</string>
+
+    <!-- Settings -->
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_ntfy_topic">ntfy Topic</string>
+    <string name="settings_ntfy_server">ntfy Server</string>
+    <string name="btn_open_ntfy">Open ntfy App</string>
+    <string name="about_title">About</string>
+    <string name="about_version">Version %s</string>
+    <string name="about_libraries">Libraries</string>
+
+    <!-- Errors -->
+    <string name="error_no_network">No network connection</string>
+    <string name="error_camera_offline">Camera appears to be offline</string>
+</resources>

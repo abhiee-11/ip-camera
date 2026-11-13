@@ -1,0 +1,22 @@
+[
+    {
+        "merged": "com.freecam.camera-mergeDebugResources-46:/layout/activity_main.xml",
+        "source": "com.freecam.camera-main-49:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.freecam.camera-mergeDebugResources-46:/layout/layout_dim_screen.xml",
+        "source": "com.freecam.camera-main-49:/layout/layout_dim_screen.xml"
+    },
+    {
+        "merged": "com.freecam.camera-mergeDebugResources-46:/layout/activity_settings.xml",
+        "source": "com.freecam.camera-main-49:/layout/activity_settings.xml"
+    },
+    {
+        "merged": "com.freecam.camera-mergeDebugResources-46:/layout/activity_logs.xml",
+        "source": "com.freecam.camera-main-49:/layout/activity_logs.xml"
+    },
+    {
+        "merged": "com.freecam.camera-mergeDebugResources-46:/layout/activity_pairing.xml",
+        "source": "com.freecam.camera-main-49:/layout/activity_pairing.xml"
+    }
+]

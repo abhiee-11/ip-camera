@@ -1,0 +1,21 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.5.0"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24"
+        classpath "org.jetbrains.kotlin:kotlin-serialization:1.9.24"
+    }
+}
+
+allprojects {
+    group = "com.freecam"
+    version = "1.0.0"
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
