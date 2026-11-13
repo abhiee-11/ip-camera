@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/pref_cat_general">
+        <SwitchPreferenceCompat
+            android:key="auto_connect"
+            android:title="@string/pref_auto_connect"
+            android:summary="@string/pref_auto_connect_summary"
+            android:defaultValue="true" />
+
+        <SwitchPreferenceCompat
+            android:key="keep_screen_on"
+            android:title="@string/pref_keep_screen_on"
+            android:summary="@string/pref_keep_screen_on_summary"
+            android:defaultValue="false" />
+
+        <ListPreference
+            android:key="default_playback_speed"
+            android:title="@string/pref_default_speed"
+            android:summary="@string/pref_default_speed_summary"
+            android:defaultValue="1.0"
+            android:entries="@array/speed_entries"
+            android:entryValues="@array/speed_values" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_cat_playback">
+        <SwitchPreferenceCompat
+            android:key="hw_decoding"
+            android:title="@string/pref_hw_decoding"
+            android:summary="@string/pref_hw_decoding_summary"
+            android:defaultValue="true" />
+
+        <SwitchPreferenceCompat
+            android:key="buffer_low_latency"
+            android:title="@string/pref_low_latency"
+            android:summary="@string/pref_low_latency_summary"
+            android:defaultValue="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_cat_network">
+        <EditTextPreference
+            android:key="connection_timeout"
+            android:title="@string/pref_connection_timeout"
+            android:summary="@string/pref_connection_timeout_summary"
+            android:defaultValue="10"
+            android:dialogTitle="@string/pref_connection_timeout"
+            android:inputType="number" />
+
+        <SwitchPreferenceCompat
+            android:key="verify_ssl"
+            android:title="@string/pref_verify_ssl"
+            android:summary="@string/pref_verify_ssl_summary"
+            android:defaultValue="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_cat_about">
+        <Preference
+            android:key="clear_cache"
+            android:title="@string/pref_clear_cache"
+            android:summary="@string/pref_clear_cache_summary" />
+
+        <Preference
+            android:key="about"
+            android:title="@string/about_title"
+            android:summary="@string/about_summary" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

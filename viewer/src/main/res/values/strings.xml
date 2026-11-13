@@ -6,6 +6,8 @@
     <string name="events_title">Events</string>
     <string name="player_title">Playback</string>
     <string name="settings_title">Settings</string>
+    <string name="about_title">About</string>
+    <string name="about_summary">FreeCam Viewer v1.0</string>
 
     <!-- Main screen -->
     <string name="no_cameras">No cameras added</string>
@@ -51,6 +53,14 @@
 
     <!-- Events -->
     <string name="no_events">No motion events</string>
+    <string name="event">Event</string>
+    <string name="event_motion">Motion Detected</string>
+    <string name="event_recording_start">Recording Started</string>
+    <string name="event_recording_stop">Recording Stopped</string>
+
+    <!-- History -->
+    <string name="recording">Recording</string>
+    <string name="play">Play</string>
 
     <!-- Settings -->
     <string name="settings_theme">Theme</string>
@@ -60,11 +70,59 @@
     <string name="settings_ntfy_topic">ntfy Topic</string>
     <string name="settings_ntfy_server">ntfy Server</string>
     <string name="btn_open_ntfy">Open ntfy App</string>
-    <string name="about_title">About</string>
     <string name="about_version">Version %s</string>
     <string name="about_libraries">Libraries</string>
+
+    <!-- Viewer Settings Preferences -->
+    <string name="pref_cat_general">General</string>
+    <string name="pref_cat_playback">Playback</string>
+    <string name="pref_cat_network">Network</string>
+    <string name="pref_cat_about">About</string>
+
+    <string name="pref_auto_connect">Auto-connect on launch</string>
+    <string name="pref_auto_connect_summary">Automatically connect to last used camera</string>
+    <string name="pref_keep_screen_on">Keep screen on</string>
+    <string name="pref_keep_screen_on_summary">Prevent screen timeout during playback</string>
+    <string name="pref_default_speed">Default playback speed</string>
+    <string name="pref_default_speed_summary">Set default speed for recordings</string>
+
+    <string name="pref_hw_decoding">Hardware decoding</string>
+    <string name="pref_hw_decoding_summary">Use hardware acceleration for video decoding</string>
+    <string name="pref_low_latency">Low latency mode</string>
+    <string name="pref_low_latency_summary">Optimize for live streaming latency</string>
+
+    <string name="pref_connection_timeout">Connection timeout (seconds)</string>
+    <string name="pref_connection_timeout_summary">Timeout for camera API connections</string>
+    <string name="pref_verify_ssl">Verify SSL certificates</string>
+    <string name="pref_verify_ssl_summary">Enable SSL certificate verification (disable for self-signed certs)</string>
+
+    <string name="pref_clear_cache">Clear cache</string>
+    <string name="pref_clear_cache_summary">Clear cached thumbnails and temporary files</string>
 
     <!-- Errors -->
     <string name="error_no_network">No network connection</string>
     <string name="error_camera_offline">Camera appears to be offline</string>
+
+    <!-- Arrays -->
+    <string-array name="speed_entries">
+        <item>1x</item>
+        <item>2x</item>
+        <item>4x</item>
+    </string-array>
+    <string-array name="speed_values">
+        <item>1.0</item>
+        <item>2.0</item>
+        <item>4.0</item>
+    </string-array>
+
+    <string-array name="theme_entries">
+        <item>System</item>
+        <item>Dark</item>
+        <item>Light</item>
+    </string-array>
+    <string-array name="theme_values">
+        <item>system</item>
+        <item>dark</item>
+        <item>light</item>
+    </string-array>
 </resources>

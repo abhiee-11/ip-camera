@@ -6,110 +6,47 @@
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fitsSystemWindows="true"
+        android:background="@android:color/black"
         tools:context=".ui.PlayerActivity">
 
         <com.google.android.material.appbar.AppBarLayout
             android:id="@+id/appBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
-            android:fitsSystemWindows="true">
+            android:theme="@style/Theme.FreeCamViewer.AppBarOverlay">
 
             <androidx.appcompat.widget.Toolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:background="?attr/colorSurface"
-                app:layout_collapseMode="pin"
-                app:title="@string/player_title" />
+                android:background="@android:color/transparent"
+                app:popupTheme="@style/Theme.FreeCamViewer.PopupOverlay"
+                app:title="Camera" />
+
         </com.google.android.material.appbar.AppBarLayout>
 
-        <androidx.core.widget.NestedScrollView
+        <androidx.media3.ui.PlayerView
+            android:id="@+id/playerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="@android:color/black"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"
-            android:fillViewport="true">
+            app:show_buffering="when_playing"
+            app:controller_layout_id="@layout/custom_controller" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
+        <TextView
+            android:id="@+id/tvMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:text="@string/live"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:background="@color/dark_surface"
+            android:textColor="@color/teal_200"
+            android:layout_gravity="top|start" />
 
-                <FrameLayout
-                    android:id="@+id/playerContainer"
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:background="@color/black" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp"
-                    android:background="@color/dark_surface">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center"
-                        android:layout_marginBottom="8dp">
-
-                        <Button
-                            android:id="@+id/btnSkipBack"
-                            style="@style/Widget.MaterialComponents.Button"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
-                            android:text="@string/skip_back" />
-
-                        <Button
-                            android:id="@+id/btnPlayPause"
-                            style="@style/Widget.MaterialComponents.Button"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
-                            android:text="⏸" />
-
-                        <Button
-                            android:id="@+id/btnSkipForward"
-                            style="@style/Widget.MaterialComponents.Button"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
-                            android:text="@string/skip_forward" />
-
-                        <TextView
-                            android:id="@+id/tvSpeed"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="16sp"
-                            android:textColor="@color/white"
-                            android:paddingHorizontal="16dp"
-                            android:gravity="center"
-                            tools:text="1x" />
-                    </LinearLayout>
-
-                    <androidx.media3.ui.DefaultTimeBar
-                        android:id="@+id/timeBar"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:played_color="@color/teal_200"
-                        app:buffered_color="@color/gray_600"
-                        app:unplayed_color="@color/gray_600" />
-
-                    <TextView
-                        android:id="@+id/tvPosition"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textSize="12sp"
-                        android:textColor="@color/gray_600"
-                        android:gravity="center"
-                        tools:text="0:00 / 5:00" />
-                </LinearLayout>
-            </LinearLayout>
-        </androidx.core.widget.NestedScrollView>
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>

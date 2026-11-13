@@ -30,5 +30,37 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.AddCameraActivity"
+            android:exported="false"
+            android:label="@string/add_camera_title"
+            android:theme="@style/Theme.FreeCamViewer.NoActionBar" />
+
+        <activity
+            android:name=".ui.PlayerActivity"
+            android:exported="false"
+            android:label="@string/player_title"
+            android:theme="@style/Theme.FreeCamViewer.NoActionBar"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" />
+
+        <activity
+            android:name=".ui.HistoryActivity"
+            android:exported="false"
+            android:label="@string/history_title"
+            android:theme="@style/Theme.FreeCamViewer.NoActionBar" />
+
+        <activity
+            android:name=".ui.EventsActivity"
+            android:exported="false"
+            android:label="@string/events_title"
+            android:theme="@style/Theme.FreeCamViewer.NoActionBar" />
+
+        <activity
+            android:name=".ui.ViewerSettingsActivity"
+            android:exported="false"
+            android:label="@string/settings_title"
+            android:theme="@style/Theme.FreeCamViewer.NoActionBar" />
+
     </application>
 </manifest>
