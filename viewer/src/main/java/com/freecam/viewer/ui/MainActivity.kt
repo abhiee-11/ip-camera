@@ -107,10 +107,59 @@ class MainActivity : AppCompatActivity() {
 
     private fun processQRResult(qrContent: String) {
         try {
-            val pairing = Pairing.fromJson(qrContent)
+            val pairing = parseCameraPairing(qrContent)
             testAndSavePairing(pairing)
         } catch (e: Exception) {
             Toast.makeText(this, "Invalid QR code: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun parseCameraPairing(qrContent: String): Pairing {
+        // Try parsing as Pairing model first (viewer-generated QR)
+        return try {
+            Pairing.fromJson(qrContent)
+        } catch (e: Exception) {
+            // Fallback: parse camera's QR format
+            val json = org.json.JSONObject(qrContent)
+            val rtspUrl = json.optString("rtsp_url", "")
+            val apiUrl = json.optString("api_url", "")
+            val host = extractHost(rtspUrl) ?: extractHost(apiUrl) ?: "0.0.0.0"
+            Pairing(
+                v = json.optInt("version", 1),
+                name = json.optString("name", "Camera"),
+                host = host,
+                rtspPort = extractPort(rtspUrl) ?: 8554,
+                httpPort = extractPort(apiUrl) ?: 8080,
+                path = extractPath(rtspUrl) ?: "live",
+                token = json.optString("token", ""),
+                mode = json.optString("mode", "local")
+            )
+        }
+    }
+
+    private fun extractHost(url: String): String? {
+        try {
+            return java.net.URL(url).host
+        } catch (e: Exception) {
+            return null
+        }
+    }
+
+    private fun extractPort(url: String): Int? {
+        try {
+            val port = java.net.URL(url).port
+            return if (port > 0) port else null
+        } catch (e: Exception) {
+            return null
+        }
+    }
+
+    private fun extractPath(url: String): String? {
+        try {
+            val path = java.net.URL(url).path
+            return if (path.isNotEmpty()) path.removePrefix("/") else null
+        } catch (e: Exception) {
+            return null
         }
     }
 

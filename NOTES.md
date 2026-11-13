@@ -131,11 +131,15 @@ curl -H "Authorization: Bearer <token>" -H "Range: bytes=0-1023" http://100.64.x
 | 1.0.0 | 2026-11-13 | Initial M0 skeleton |
 | 1.1.0 | 2026-11-13 | M1 fix: RTSP server via pedroSG94/RTSP-Server 1.2.1 |
 | 1.2.0 | 2026-11-13 | M2: HTTP API Server (NanoHTTPD) |
+| 1.3.0 | 2026-11-13 | M3: Motion Detection & Recording |
+| 1.4.0 | 2026-11-13 | M4: Camera UI & Settings |
+| 1.5.0 | 2026-11-13 | M5: Viewer App complete |
 
 ## Git Push Log
 
 - **2026-11-13 13:15**: Push failed - waiting for GitHub authentication (PAT/gh/SSH). Will retry after next milestone.
 - **2026-11-13 13:37**: Push timed out after M2 commit. Will retry after next milestone.
+- **2026-11-13 14:28**: Push timed out after M5 commit. Will retry after next milestone.
 
 ## Future Improvements
 

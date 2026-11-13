@@ -91,6 +91,11 @@ class PairingActivity : AppCompatActivity() {
     }
 
     private fun getLocalIpAddress(): String {
+        // Priority 1: Tailscale IP (100.64.0.0/10 CGNAT range)
+        // Priority 2: Local Wi-Fi IP
+        var tailscaleIp: String? = null
+        var wifiIp: String? = null
+        
         try {
             val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
             while (interfaces.hasMoreElements()) {
@@ -100,13 +105,21 @@ class PairingActivity : AppCompatActivity() {
                 while (addresses.hasMoreElements()) {
                     val addr = addresses.nextElement()
                     if (addr is java.net.Inet4Address && !addr.isLoopbackAddress) {
-                        return addr.hostAddress
+                        val ip = addr.hostAddress
+                        // Tailscale uses 100.64.0.0/10 (CGNAT)
+                        if (ip.startsWith("100.")) {
+                            tailscaleIp = ip
+                        } else if (wifiIp == null) {
+                            wifiIp = ip
+                        }
                     }
                 }
             }
         } catch (e: Exception) {
             Log.e("PairingActivity", "Error getting IP", e)
         }
-        return "0.0.0.0"
+        
+        // Prefer Tailscale IP for pairing
+        return tailscaleIp ?: wifiIp ?: "0.0.0.0"
     }
 }
