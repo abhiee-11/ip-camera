@@ -1,5 +1,15 @@
 # FreeCam UI Redesign + State Contract — Implementation Plan
 
+> **Status (2026-11-14): implemented.** All tasks are done and committed locally. The
+> order was changed on request: the pipeline work (stream, muxer, auth, events) went
+> first, the design system and screens after. Two things changed as a result and are
+> recorded in NOTES.md: the encoder runs **headless** (RootEncoder 2.4.5 supports a
+> viewless mode, so no activity has to stay alive), and **motion detection is
+> unavailable** (the library exposes no camera frames), so the camera records
+> continuously and the UI says so. On-device verification is still outstanding: the
+> camera phone has no ADB, and the viewer phone was in use by another session.
+> `docs/superpowers/plans/2026-11-14-manual-device-checks.md` has the checks.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Rebuild both FreeCam apps on a graphite-and-amber "appliance" design system, and back them with a real state contract so every number on screen is true.
