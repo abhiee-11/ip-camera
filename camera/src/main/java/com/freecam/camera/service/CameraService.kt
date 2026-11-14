@@ -22,6 +22,7 @@ import com.freecam.camera.data.CameraUiState
 import com.freecam.camera.data.EventStore
 import com.freecam.camera.data.Settings
 import com.freecam.camera.http.ApiServer
+import com.freecam.camera.notifications.Notifier
 import com.freecam.camera.recording.RecordingManager
 import com.freecam.camera.storage.StorageManager
 import com.freecam.camera.stream.StreamController
@@ -100,6 +101,7 @@ class CameraService : Service() {
     private var apiServer: ApiServer? = null
     private var recordingManager: RecordingManager? = null
     private var storageManager: StorageManager? = null
+    private var notifier: Notifier? = null
     private var startTime: Long = 0L
     private var errorCode: String? = null
 
@@ -113,6 +115,7 @@ class CameraService : Service() {
         acquireLocks()
 
         storageManager = StorageManager(this, settings, appLog)
+        notifier = Notifier(this, settings, appLog)
         recordingManager = RecordingManager(
             context = this,
             settings = settings,
@@ -297,6 +300,7 @@ class CameraService : Service() {
         errorCode = null
         errorMessage = ""
         eventStore.add("stream_start", "low")
+        notifier?.notify("FreeCam", "${settings.cameraName} is streaming")
         recordingManager?.start()
         publishState()
         updateNotification()
@@ -322,6 +326,7 @@ class CameraService : Service() {
         hasError = true
         appLog.logError(TAG, "$code: $message")
         eventStore.add("error", "high")
+        notifier?.notify("FreeCam", message, "high")
         publishState()
         updateNotification()
     }

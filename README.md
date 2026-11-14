@@ -212,11 +212,40 @@ GitHub Actions workflow at `.github/workflows/ci.yml`:
    - `SIGNING_STORE_PASSWORD` - keystore password
 
 3. For local release builds, copy `local.properties.example` to `local.properties` and fill in values.
+   The build reads the signing values from `local.properties` (which is git-ignored) or from
+   `-P` flags, and only applies the release signing config when all four values are present:
+
+   ```properties
+   sdk.dir=C:/path/to/Android/Sdk
+   signing.storeFile=freecam-release.jks
+   signing.storePassword=...
+   signing.keyAlias=freecam
+   signing.keyPassword=...
+   ```
+
+   Use forward slashes in `sdk.dir`: a Windows path with backslashes is read as escape
+   characters and breaks the SDK lookup.
 
 4. Build locally:
    ```bash
    ./tools/build-release.sh 1 "1.0.0"
    ```
+
+   or, with the bundled toolchain on Windows:
+
+   ```powershell
+   & "java17\jdk-17.0.11+9\bin\java.exe" -cp "gradle-8.13\gradle-8.13\lib\*" org.gradle.launcher.GradleMain assembleRelease --no-daemon
+   ```
+
+   Verify the result:
+
+   ```powershell
+   apksigner verify --print-certs camera\build\outputs\apk\release\camera-release.apk
+   ```
+
+   **Keep the keystore and its password.** It is the app's identity: a different key
+   cannot update an installed app. Back it up somewhere safe and set the four GitHub
+   secrets from it.
 
 ## License
 

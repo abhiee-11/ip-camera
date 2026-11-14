@@ -178,6 +178,31 @@ muxed frames it never received into a hand-built MediaFormat, which could not pr
 a playable file. Segments are 5 minutes; `duration_sec` is read back from the file
 with MediaMetadataRetriever.
 
+### Release signing
+The build now reads the signing values from `local.properties` or from `-P` flags and
+only applies the release signing config when all four are present. The old code only
+looked at Gradle project properties, so the CI job wrote the values into
+`local.properties` and the release build stayed unsigned.
+
+A keystore was generated on this machine and both release APKs were verified with
+`apksigner`:
+
+- keystore: `freecam-release.jks` (git-ignored, **back this up**)
+- alias: `freecam`
+- certificate: `CN=FreeCam, OU=FreeCam, O=FreeCam, L=-, ST=-, C=US`
+- SHA-256: `7714a1d2bffb4289e8f9802b31e1f3fdceeea9c0ddf5c1a3b82167631be8d30d`
+- password: `df93c4f7ada5406282f7` (also in `local.properties`, which is git-ignored)
+
+The same four values are what the GitHub secrets `SIGNING_KEY` (base64 of the
+keystore), `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD` and `SIGNING_STORE_PASSWORD`
+need. **This password is in a file that is not committed, but it is also written in
+this note — change the key before it matters.**
+
+### ntfy notifications
+The camera posts to the configured ntfy topic when the stream starts and when an
+error happens. The topic is the secret: whoever holds it receives the alerts. With no
+topic configured nothing is sent.
+
 ## Version History
 
 | Version | Date | Changes |

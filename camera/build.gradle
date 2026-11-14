@@ -3,6 +3,25 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'org.jetbrains.kotlin.plugin.serialization'
 }
+// Release signing values come from local.properties (never committed) or from
+// -P flags, which is what CI uses.
+def signingValues = new Properties()
+def signingPropertiesFile = rootProject.file('local.properties')
+if (signingPropertiesFile.exists()) {
+    signingPropertiesFile.withInputStream { signingValues.load(it) }
+}
+def signingValue = { String name ->
+    if (project.hasProperty(name)) {
+        return project.property(name).toString()
+    }
+    return signingValues.getProperty(name)
+}
+def signingStoreFile = signingValue('signing.storeFile')
+def signingStorePassword = signingValue('signing.storePassword')
+def signingKeyAlias = signingValue('signing.keyAlias')
+def signingKeyPassword = signingValue('signing.keyPassword')
+def hasReleaseSigning = signingStoreFile && signingStorePassword && signingKeyAlias && signingKeyPassword
+
 
 android {
     namespace = "com.freecam.camera"
@@ -29,14 +48,11 @@ android {
     }
     signingConfigs {
         release {
-            if (project.hasProperty("signing.storeFile") &&
-                project.hasProperty("signing.storePassword") &&
-                project.hasProperty("signing.keyAlias") &&
-                project.hasProperty("signing.keyPassword")) {
-                storeFile file(signing.storeFile)
-                storePassword signing.storePassword
-                keyAlias signing.keyAlias
-                keyPassword signing.keyPassword
+            if (hasReleaseSigning) {
+                storeFile rootProject.file(signingStoreFile)
+                storePassword signingStorePassword
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPassword
             }
         }
     }
@@ -47,7 +63,7 @@ android {
         release {
             minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
+            if (hasReleaseSigning) { signingConfig signingConfigs.release }
         }
     }
 }
