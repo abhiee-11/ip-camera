@@ -1,12 +1,13 @@
 package com.freecam.common.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class RecordingInfo(
-    val file: String,
-    val startTs: Long,
-    val durationSec: Int,
-    val sizeBytes: Long,
-    val thumb: String?
+    val filename: String,
+    val path: String,
+    val size: Long,
+    @SerialName("start_time") val startTime: Long,
+    @SerialName("duration_sec") val durationSec: Int
 )

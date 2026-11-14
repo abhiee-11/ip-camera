@@ -27,16 +27,12 @@ class Settings(private val prefs: SharedPreferences) {
             return bytes.joinToString("") { "%02x".format(it) }
         }
 
-        // Constants for encoder
-        const val h264Profile = 8 // MediaCodecInfo.CodecProfileLevel.AVCProfileHigh
-        const val h264Level = 512 // MediaCodecInfo.CodecProfileLevel.AVCLevel41
+        // Encoder and server constants
         const val audioSampleRate = 44100
         const val audioStereo = true
         const val audioBitrateKbps = 128
         const val rtspPort = 8554
         const val rtspPath = "live"
-        const val rtspUser = "freecam"
-        const val rtspPassword = "freecam"
         const val apiPort = 8080
     }
 
@@ -65,8 +61,13 @@ class Settings(private val prefs: SharedPreferences) {
         get() = prefs.getString("rotation", "auto")!!
         set(value) = prefs.edit().putString("rotation", value).apply()
 
+    /** Audio needs the microphone permission, so it is off until it is asked for. */
+    var audioEnabled: Boolean
+        get() = prefs.getBoolean("audio_enabled", false)
+        set(value) = prefs.edit().putBoolean("audio_enabled", value).apply()
+
     var recordingMode: String
-        get() = prefs.getString("recording_mode", "motion")!!
+        get() = prefs.getString("recording_mode", "continuous")!!
         set(value) = prefs.edit().putString("recording_mode", value).apply()
 
     var storageCapGb: Int
@@ -79,7 +80,7 @@ class Settings(private val prefs: SharedPreferences) {
 
     // Motion settings
     var motionEnabled: Boolean
-        get() = prefs.getBoolean("motion_enabled", true)
+        get() = prefs.getBoolean("motion_enabled", false)
         set(value) = prefs.edit().putBoolean("motion_enabled", value).apply()
 
     var motionSensitivity: String
@@ -108,13 +109,18 @@ class Settings(private val prefs: SharedPreferences) {
         get() = prefs.getBoolean("auto_start", true)
         set(value) = prefs.edit().putBoolean("auto_start", value).apply()
 
+    /** Off by default: the old restart path could leave the camera dead. */
     var nightlyRestart: Boolean
-        get() = prefs.getBoolean("nightly_restart", true)
+        get() = prefs.getBoolean("nightly_restart", false)
         set(value) = prefs.edit().putBoolean("nightly_restart", value).apply()
 
     var restartTime: String
         get() = prefs.getString("restart_time", "04:00")!!
         set(value) = prefs.edit().putString("restart_time", value).apply()
+
+    var previewEnabled: Boolean
+        get() = prefs.getBoolean("preview_enabled", false)
+        set(value) = prefs.edit().putBoolean("preview_enabled", value).apply()
 
     // Token
     var token: String
@@ -128,6 +134,10 @@ class Settings(private val prefs: SharedPreferences) {
             return t
         }
         set(value) = prefs.edit().putString("token", value).apply()
+
+    /** RTSP credentials: the per install token is the password. */
+    val rtspUser: String get() = "freecam"
+    val rtspPassword: String get() = token
 
     fun resetToken(): String {
         val newToken = generateToken()

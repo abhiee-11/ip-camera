@@ -11,13 +11,13 @@ import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.freecam.common.model.MotionEvent
 import com.freecam.common.model.Pairing
+import com.freecam.common.model.RecordingInfo
 import com.freecam.viewer.R
 import com.freecam.viewer.databinding.ActivityEventsBinding
 import com.freecam.viewer.databinding.ItemEventBinding
 import com.freecam.viewer.network.ApiClient
-import com.freecam.viewer.network.EventInfo
-import com.freecam.viewer.network.RecordingInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -59,9 +59,9 @@ class EventsActivity : AppCompatActivity() {
     }
 
     inner class EventAdapter : RecyclerView.Adapter<EventAdapter.EventViewHolder>() {
-        private var events = emptyList<EventInfo>()
+        private var events = emptyList<MotionEvent>()
 
-        fun submitList(newList: List<EventInfo>) {
+        fun submitList(newList: List<MotionEvent>) {
             events = newList
             notifyDataSetChanged()
         }
@@ -79,25 +79,25 @@ class EventsActivity : AppCompatActivity() {
         override fun getItemCount(): Int = events.size
 
         inner class EventViewHolder(private val binding: ItemEventBinding) : RecyclerView.ViewHolder(binding.root) {
-            fun bind(event: EventInfo) {
-                binding.tvTimestamp.text = com.freecam.common.util.TimeFormat.formatFull(event.timestamp)
-                binding.tvEventType.text = when (event.type) {
-                    "motion" -> getString(R.string.event_motion)
-                    "recording_start" -> getString(R.string.event_recording_start)
-                    "recording_stop" -> getString(R.string.event_recording_stop)
-                    else -> event.type
+            fun bind(event: MotionEvent) {
+                binding.tvTimestamp.text = com.freecam.common.util.TimeFormat.formatFull(event.ts)
+                binding.tvEventType.text = when (event.severity) {
+                    "high" -> getString(R.string.event_motion)
+                    "low" -> getString(R.string.event_recording_start)
+                    else -> getString(R.string.event_recording_stop)
                 }
-                binding.tvDetails.text = event.details ?: ""
+                binding.tvDetails.text = event.recordingPath ?: ""
 
                 binding.root.setOnClickListener {
                     val pairing = this@EventsActivity.pairing ?: return@setOnClickListener
-                    if (event.recordingPath.isNotEmpty()) {
+                    val clipPath = event.recordingPath
+                    if (!clipPath.isNullOrEmpty()) {
                         val recording = RecordingInfo(
-                            path = event.recordingPath,
-                            filename = event.recordingPath.substringAfterLast("/"),
+                            path = clipPath,
+                            filename = clipPath.substringAfterLast("/"),
                             size = 0,
                             durationSec = 0,
-                            startTime = event.timestamp
+                            startTime = event.ts
                         )
                         val intent = Intent(binding.root.context, PlayerActivity::class.java).apply {
                             putExtra("pairing", Json.encodeToString(Pairing.serializer(), pairing))

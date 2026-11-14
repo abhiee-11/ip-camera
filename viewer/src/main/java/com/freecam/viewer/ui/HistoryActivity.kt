@@ -12,11 +12,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.freecam.common.model.Pairing
+import com.freecam.common.model.RecordingInfo
 import com.freecam.viewer.R
 import com.freecam.viewer.databinding.ActivityHistoryBinding
 import com.freecam.viewer.databinding.ItemRecordingBinding
 import com.freecam.viewer.network.ApiClient
-import com.freecam.viewer.network.RecordingInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json

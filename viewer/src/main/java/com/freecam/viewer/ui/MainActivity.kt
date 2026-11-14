@@ -236,10 +236,10 @@ class MainActivity : AppCompatActivity() {
                     }
                     runOnUiThread {
                         if (status != null) {
-                            val statusText = if (status.streaming) getString(R.string.camera_online) else getString(R.string.camera_offline)
+                            val statusText = if (status.running) getString(R.string.camera_online) else getString(R.string.camera_offline)
                             binding.tvStatus.text = statusText
-                            binding.tvStatus.setTextColor(if (status.streaming) 0xFF03DAC5.toInt() else 0xFFEF5350.toInt())
-                            binding.tvLastSeen.text = getString(R.string.last_seen, com.freecam.common.util.TimeFormat.formatRelative(status.uptimeSeconds * 1000))
+                            binding.tvStatus.setTextColor(if (status.running) 0xFF03DAC5.toInt() else 0xFFEF5350.toInt())
+                            binding.tvLastSeen.text = getString(R.string.last_seen, com.freecam.common.util.TimeFormat.formatRelative(status.uptimeMs))
                         } else {
                             binding.tvStatus.text = getString(R.string.camera_offline)
                             binding.tvStatus.setTextColor(0xFFEF5350.toInt())

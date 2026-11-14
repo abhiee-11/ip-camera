@@ -1,9 +1,11 @@
 package com.freecam.camera.ui
 
+import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.Bundle
@@ -14,6 +16,8 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.lifecycleScope
 import com.freecam.camera.R
@@ -28,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val handler = Handler(Looper.getMainLooper())
     private val updateRunnable = Runnable { updateUI() }
+    private val CAMERA_PERMISSION_REQUEST_CODE = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +54,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupButtons() {
         binding.btnStartStop.setOnClickListener {
+            if (!hasCameraPermission()) {
+                requestCameraPermission()
+                return@setOnClickListener
+            }
             val intent = Intent(this, CameraService::class.java).apply {
                 action = if (CameraService.isRunning) CameraService.ACTION_STOP else CameraService.ACTION_START
             }
@@ -76,8 +85,39 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.switchPreview.setOnCheckedChangeListener { _, isChecked ->
-            CameraService.setPreviewEnabled(isChecked)
+            val intent = Intent(this, CameraService::class.java).apply {
+                action = CameraService.ACTION_SET_PREVIEW
+                putExtra(CameraService.EXTRA_PREVIEW_ENABLED, isChecked)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
             Toast.makeText(this, if (isChecked) "Preview enabled" else "Preview disabled", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun hasCameraPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestCameraPermission() {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.CAMERA),
+            CAMERA_PERMISSION_REQUEST_CODE
+        )
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Camera permission granted", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Camera permission required for streaming", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -118,12 +158,14 @@ class MainActivity : AppCompatActivity() {
         binding.tvBattery.text = "${getString(R.string.info_battery)} ${if (batteryLevel >= 0) "$batteryLevel%" else "N/A"}"
 
         // Storage
-        val storageStats = com.freecam.camera.storage.StorageManager(this, settings).getStorageStats()
+        val appLog = (application as com.freecam.camera.App).appLog
+            ?: com.freecam.camera.data.AppLog(this)
+        val storageStats = com.freecam.camera.storage.StorageManager(this, settings, appLog).getStorageStats()
         binding.tvStorageFree.text = "${getString(R.string.info_storage_free)} ${formatBytes(storageStats.capBytes - storageStats.totalSizeBytes)}"
         binding.tvStorageUsed.text = "${getString(R.string.info_storage_used)} ${formatBytes(storageStats.totalSizeBytes)} (${storageStats.usagePercent}%)"
 
-        // Events today (placeholder)
-        binding.tvEventsToday.text = "${getString(R.string.info_events_today)} 0"
+        // Events today
+        binding.tvEventsToday.text = "${getString(R.string.info_events_today)} ${CameraService.snapshot().eventsToday}"
 
         // Motion detection status
         binding.tvMotion.text = "${getString(R.string.info_motion)} ${if (settings.motionEnabled) "ON (${settings.motionSensitivity})" else "OFF"}"

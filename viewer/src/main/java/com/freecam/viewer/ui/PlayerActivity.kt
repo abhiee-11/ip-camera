@@ -12,10 +12,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.lifecycleScope
 import com.freecam.common.model.Pairing
+import com.freecam.common.model.RecordingInfo
 import com.freecam.viewer.R
 import com.freecam.viewer.databinding.ActivityPlayerBinding
 import com.freecam.viewer.network.ApiClient
-import com.freecam.viewer.network.RecordingInfo
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
@@ -111,15 +111,19 @@ class PlayerActivity : AppCompatActivity() {
     private fun playRecording() {
         val pairing = this.pairing ?: return
         val recording = playbackRecording ?: return
-        
-        val url = "http://${pairing.host}:${pairing.httpPort}${recording.path}"
-        
+
+        val url = ApiClient.buildHttpUrl(pairing.host, pairing.httpPort, recording.path)
+
         val mediaItem = MediaItem.fromUri(url)
             .buildUpon()
             .setMediaId(recording.filename)
             .build()
-        
-        val mediaSource = DefaultMediaSourceFactory(this).createMediaSource(mediaItem)
+
+        // The camera API needs the bearer token on every request.
+        val dataSourceFactory = androidx.media3.datasource.DefaultHttpDataSource.Factory()
+            .setDefaultRequestProperties(mapOf("Authorization" to "Bearer ${pairing.token}"))
+        val mediaSource = androidx.media3.exoplayer.source.ProgressiveMediaSource.Factory(dataSourceFactory)
+            .createMediaSource(mediaItem)
         exoPlayer?.setMediaSource(mediaSource)
         exoPlayer?.prepare()
         

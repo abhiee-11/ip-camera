@@ -12,10 +12,12 @@ data class Pairing(
     val httpPort: Int = 8080,
     val path: String = "live",
     val token: String,
-    val mode: String = "local"
+    val mode: String = "local",
+    /** RTSP user; the RTSP password is the pairing token itself. */
+    val rtspUser: String = "freecam"
 ) {
     fun toJson(): String = Json.encodeToString(Pairing.serializer(), this)
-    
+
     companion object {
         fun fromJson(json: String): Pairing = Json.decodeFromString(Pairing.serializer(), json)
     }

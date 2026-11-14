@@ -14,95 +14,114 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
+import com.freecam.camera.BuildConfig
 import com.freecam.camera.R
 import com.freecam.camera.data.AppLog
+import com.freecam.camera.data.CameraStateStore
+import com.freecam.camera.data.CameraUiState
+import com.freecam.camera.data.EventStore
 import com.freecam.camera.data.Settings
 import com.freecam.camera.http.ApiServer
-import com.freecam.camera.http.MotionEvent
-import com.freecam.camera.http.RecordingInfo
-import com.freecam.camera.motion.MotionDetector
 import com.freecam.camera.recording.RecordingManager
 import com.freecam.camera.storage.StorageManager
 import com.freecam.camera.stream.StreamController
 import com.freecam.camera.ui.MainActivity
+import com.freecam.camera.util.BatteryStatus
+import com.freecam.camera.util.NetworkAddresses
+import com.freecam.common.model.ApiError
+import com.freecam.common.model.CameraStatus
+import com.freecam.common.model.MotionEvent
+import com.freecam.common.model.RecordingInfo
+import com.freecam.common.util.StreamUrls
+import com.pedro.library.view.OpenGlView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.io.File
 import java.util.Calendar
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 
+/**
+ * Runs the camera: RTSP server, HTTP API, recording and the published state.
+ */
 class CameraService : Service() {
 
     companion object {
         const val ACTION_START = "com.freecam.camera.ACTION_START"
         const val ACTION_STOP = "com.freecam.camera.ACTION_STOP"
+        const val ACTION_RESTART_CAMERA = "com.freecam.camera.ACTION_RESTART_CAMERA"
+        const val ACTION_RESET_TOKEN = "com.freecam.camera.ACTION_RESET_TOKEN"
+        const val ACTION_SET_PREVIEW = "com.freecam.camera.ACTION_SET_PREVIEW"
+        const val EXTRA_PREVIEW_ENABLED = "com.freecam.camera.EXTRA_PREVIEW_ENABLED"
+
         private const val NOTIFICATION_ID = 1
         private const val CHANNEL_ID = "freecam_stream"
+        private const val TAG = "CameraService"
 
-        var isRunning = false
-        var hasError = false
-        var errorMessage = ""
-        var uptimeMillis: Long = 0
-        private var previewEnabled = false
-        private var startTime: Long = 0
+        /** The preview surface is owned by the activity and attached here. */
+        @Volatile
+        var previewView: OpenGlView? = null
 
-        fun setPreviewEnabled(enabled: Boolean) {
-            previewEnabled = enabled
+        @Volatile
+        var previewEnabled: Boolean = false
+
+        @Volatile
+        var isRunning: Boolean = false
+            private set
+
+        @Volatile
+        var hasError: Boolean = false
+            private set
+
+        @Volatile
+        var errorMessage: String = ""
+            private set
+
+        @Volatile
+        var uptimeMillis: Long = 0L
+            private set
+
+        /** The state the dashboard and the API show. */
+        fun snapshot(): CameraUiState = CameraStateStore.snapshot()
+
+        fun attachPreviewView(view: OpenGlView?) {
+            previewView = view
         }
-
-        fun isPreviewEnabled(): Boolean = previewEnabled
     }
 
     private lateinit var appLog: AppLog
     private lateinit var settings: Settings
+    private lateinit var eventStore: EventStore
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
     private val scope = CoroutineScope(Dispatchers.IO)
-    private val streamControllerJob = Job()
     private val uptimeJob = Job()
-    private val watchdogJob = Job()
     private var streamController: StreamController? = null
     private var apiServer: ApiServer? = null
-    private var motionDetector: MotionDetector? = null
     private var recordingManager: RecordingManager? = null
     private var storageManager: StorageManager? = null
+    private var startTime: Long = 0L
+    private var errorCode: String? = null
 
     override fun onCreate() {
         super.onCreate()
-        appLog = (application as com.freecam.camera.App).appLog ?: com.freecam.camera.data.AppLog(this).also {
-            (application as com.freecam.camera.App).appLog = it
-        }
+        val app = application as com.freecam.camera.App
+        appLog = app.appLog ?: AppLog(this).also { app.appLog = it }
         settings = Settings.getInstance(this)
+        eventStore = EventStore(this)
         createNotificationChannel()
         acquireLocks()
-        
-        // Schedule nightly restart if enabled
-        if (settings.nightlyRestart) {
-            scheduleNightlyRestart()
-        }
-        
-        // Initialize managers
-        motionDetector = MotionDetector(this, settings) { timestamp, severity ->
-            onMotionDetected(timestamp, severity)
-        }
-        recordingManager = RecordingManager(this, settings,
-            onRecordingStarted = { path ->
-                onRecordingStarted(path)
-            },
-            onRecordingStopped = { path, timestamp, duration ->
-                onRecordingStopped(path, timestamp, duration)
-            },
-            onError = { msg ->
-                hasError = true
-                errorMessage = msg
-                appLog.logError("CameraService", "Recording error: $msg")
-                updateNotification()
-            }
+
+        storageManager = StorageManager(this, settings, appLog)
+        recordingManager = RecordingManager(
+            context = this,
+            settings = settings,
+            appLog = appLog,
+            controller = { streamController },
+            onRecordingStarted = { file -> onRecordingStarted(file) },
+            onRecordingStopped = { file, timestamp, durationSec -> onRecordingStopped(file, timestamp, durationSec) },
+            onError = { message -> onError("record_failed", message) }
         )
-        storageManager = StorageManager(this, settings)
     }
 
     private fun createNotificationChannel() {
@@ -121,37 +140,58 @@ class CameraService : Service() {
     private fun acquireLocks() {
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "FreeCam::WakeLock").apply {
+            setReferenceCounted(false)
             acquire()
         }
         val wm = getSystemService(Context.WIFI_SERVICE) as WifiManager
         wifiLock = wm.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "FreeCam::WifiLock").apply {
+            setReferenceCounted(false)
             acquire()
         }
     }
 
     private fun releaseLocks() {
-        wakeLock?.release()
+        try {
+            wakeLock?.release()
+        } catch (e: Exception) {
+            // ignore
+        }
         wakeLock = null
-        wifiLock?.release()
+        try {
+            wifiLock?.release()
+        } catch (e: Exception) {
+            // ignore
+        }
         wifiLock = null
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val action = intent?.action ?: ACTION_START
-        when (action) {
+        when (intent?.action ?: ACTION_START) {
             ACTION_START -> startStreaming()
             ACTION_STOP -> stopStreaming()
+            ACTION_RESTART_CAMERA -> {
+                stopStreaming()
+                startStreaming()
+            }
+            ACTION_RESET_TOKEN -> resetToken()
+            ACTION_SET_PREVIEW -> {
+                previewEnabled = intent?.getBooleanExtra(EXTRA_PREVIEW_ENABLED, false) ?: false
+                settings.previewEnabled = previewEnabled
+                if (isRunning) {
+                    restartStream()
+                }
+            }
         }
         return START_STICKY
     }
 
     private fun startStreaming() {
         if (isRunning) return
-        appLog.log("CameraService", "Starting streaming")
-        isRunning = true
+        appLog.log(TAG, "Starting streaming")
+        startTime = System.currentTimeMillis()
+        errorCode = null
         hasError = false
         errorMessage = ""
-        startTime = System.currentTimeMillis()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA)
@@ -159,150 +199,221 @@ class CameraService : Service() {
             startForeground(NOTIFICATION_ID, buildNotification())
         }
 
-        // Start HTTP API server
         apiServer = ApiServer(
             context = this,
             settings = settings,
             appLog = appLog,
-            onStatus = { buildStatusJson() },
-            onRecordings = { getRecordings() },
-            onEvents = { from, to -> getEvents(from, to) }
+            onStatus = { buildCameraStatus() },
+            onRecordings = { storageManager?.getRecordings() ?: emptyList() },
+            onEvents = { from, to -> eventsBetween(from, to) },
+            onSnapshot = { null }
         )
         try {
             apiServer?.start()
-            appLog.log("CameraService", "API server started on port ${Settings.apiPort}")
+            appLog.log(TAG, "API server started on port ${Settings.apiPort}")
         } catch (e: Exception) {
-            appLog.logError("CameraService", "Failed to start API server", e)
+            appLog.logError(TAG, "Failed to start API server", e)
+            onError("api_failed", "The API server could not start")
         }
 
-        // Start storage manager
         storageManager?.start()
 
-        // Start motion detector (if enabled)
-        if (settings.motionEnabled) {
-            motionDetector?.start()
+        streamController = StreamController(
+            context = this,
+            settings = settings,
+            appLog = appLog,
+            onError = { code, message -> onError(code, message) },
+            onStarted = { onStreamStarted() }
+        )
+        val started = streamController?.start(if (previewEnabled) previewView else null) == true
+        if (!started) {
+            appLog.logError(TAG, "Stream did not start")
+            return
         }
 
-        // Start recording manager
+        isRunning = true
         recordingManager?.start()
-
-        // Start stream controller
-        streamController = StreamController.getInstance(this, settings,
-            onError = { msg ->
-                hasError = true
-                errorMessage = msg
-                appLog.logError("CameraService", "Stream error: $msg")
-                updateNotification()
-            },
-            onStarted = {
-                appLog.log("CameraService", "Stream started successfully")
-                hasError = false
-                errorMessage = ""
-                updateNotification()
-            },
-            onVideoFrame = { data, timestamp, isKeyFrame ->
-                // Forward frames to motion detector and recording manager
-                motionDetector?.onFrame(data)
-                recordingManager?.onVideoFrame(data, timestamp, isKeyFrame)
-            },
-            onAudioFrame = { data, timestamp ->
-                recordingManager?.onAudioFrame(data, timestamp)
-            }
-        )
-        streamController?.start()
-
+        uptimeJob.cancel()
         scope.launch(uptimeJob) {
+            var tick = 0
             while (isRunning) {
                 uptimeMillis = System.currentTimeMillis() - startTime
-                kotlinx.coroutines.delay(1000)
-            }
-        }
-        // Watchdog - check every 60 seconds
-        scope.launch(watchdogJob) {
-            while (isRunning) {
-                kotlinx.coroutines.delay(60_000)
-                if (isRunning) {
-                    appLog.log("CameraService", "Watchdog check")
-                }
+                tick++
+                if (tick % 5 == 0) publishState()
+                delay(1000)
             }
         }
 
-        updateNotification()
+        if (settings.nightlyRestart) scheduleNightlyRestart()
+        publishState()
     }
 
     private fun stopStreaming() {
-        if (!isRunning) return
-        appLog.log("CameraService", "Stopping streaming")
+        if (!isRunning && streamController == null) return
+        appLog.log(TAG, "Stopping streaming")
         isRunning = false
-        streamControllerJob.cancel()
         uptimeJob.cancel()
-        watchdogJob.cancel()
-        
-        streamController?.stop()
-        StreamController.clearInstance()
-        streamController = null
-        
-        motionDetector?.stop()
-        recordingManager?.stop()
-        storageManager?.stop()
 
+        recordingManager?.stop()
+        streamController?.stop()
+        streamController = null
+        storageManager?.stop()
         apiServer?.stop()
         apiServer = null
 
+        publishState()
         stopForeground(true)
         stopSelf()
         releaseLocks()
     }
 
-    private fun onMotionDetected(timestamp: Long, severity: String) {
-        appLog.log("CameraService", "Motion detected: $severity at $timestamp")
-        
-        // Log event
-        logEvent(timestamp, severity)
-        
-        // Trigger recording based on mode
-        val mode = settings.recordingMode
-        when (mode) {
-            "motion" -> recordingManager?.triggerRecording()
-            "continuous" -> {
-                if (recordingManager?.isRecording() != true) {
-                    recordingManager?.triggerRecording()
-                }
-            }
+    /** Restarts only the camera and the stream, keeping the API alive. */
+    private fun restartStream() {
+        appLog.log(TAG, "Restarting the camera stream")
+        recordingManager?.stop()
+        streamController?.stop()
+        streamController = StreamController(
+            context = this,
+            settings = settings,
+            appLog = appLog,
+            onError = { code, message -> onError(code, message) },
+            onStarted = { onStreamStarted() }
+        )
+        val started = streamController?.start(if (previewEnabled) previewView else null) == true
+        if (!started) {
+            onError("start_failed", "The camera could not be restarted")
+        } else {
+            hasError = false
+            errorCode = null
+            errorMessage = ""
+            recordingManager?.start()
         }
+        publishState()
     }
 
-    private fun onRecordingStarted(path: String) {
-        appLog.log("CameraService", "Recording started: $path")
+    private fun onStreamStarted() {
+        appLog.log(TAG, "Stream started")
+        hasError = false
+        errorCode = null
+        errorMessage = ""
+        eventStore.add("stream_start", "low")
+        recordingManager?.start()
+        publishState()
         updateNotification()
     }
 
-    private fun onRecordingStopped(path: String, timestamp: Long, durationSec: Int) {
-        appLog.log("CameraService", "Recording stopped: $path (${durationSec}s)")
+    private fun onRecordingStarted(file: java.io.File) {
+        appLog.log(TAG, "Recording started: ${file.name}")
+        eventStore.add("recording_start", "low", "/recordings/${file.name}")
+        publishState()
         updateNotification()
     }
 
-    private fun logEvent(timestamp: Long, severity: String) {
-        // Append to events.json file
-        scope.launch {
-            try {
-                val eventsFile = File(filesDir, "events.json")
-                val events = if (eventsFile.exists()) {
-                    val json = eventsFile.readText()
-                    // Parse existing events - simplified for now
-                    mutableListOf<String>()
-                } else {
-                    mutableListOf<String>()
-                }
-                events.add("""{"timestamp":$timestamp,"severity":"$severity"}""")
-                // Keep last 1000 events
-                while (events.size > 1000) events.removeAt(0)
-                val json = "[" + events.joinToString(",") + "]"
-                eventsFile.writeText(json)
-            } catch (e: Exception) {
-                appLog.logError("CameraService", "Failed to log event", e)
-            }
-        }
+    private fun onRecordingStopped(file: java.io.File, timestamp: Long, durationSec: Int) {
+        appLog.log(TAG, "Recording stopped: ${file.name} (${durationSec}s)")
+        eventStore.add("recording_stop", "low", "/recordings/${file.name}")
+        publishState()
+        updateNotification()
+    }
+
+    private fun onError(code: String, message: String) {
+        errorCode = code
+        errorMessage = message
+        hasError = true
+        appLog.logError(TAG, "$code: $message")
+        eventStore.add("error", "high")
+        publishState()
+        updateNotification()
+    }
+
+    private fun resetToken() {
+        settings.resetToken()
+        appLog.log(TAG, "Pairing token reset")
+        eventStore.add("token_reset", "medium")
+        publishState()
+    }
+
+    private fun eventsBetween(from: Long, to: Long): List<MotionEvent> {
+        return eventStore.readAll().filter { it.ts in from..to }
+    }
+
+    private fun buildCameraStatus(): CameraStatus {
+        val state = CameraStateStore.snapshot()
+        return CameraStatus(
+            running = state.running,
+            recording = state.recording,
+            uptimeMs = state.uptimeMs,
+            cameraName = state.cameraName,
+            resolution = state.resolution,
+            fps = state.fps,
+            bitrateKbps = state.bitrateKbps,
+            rtspUrl = state.rtspUrl,
+            apiUrl = state.apiUrl,
+            version = BuildConfig.VERSION_NAME,
+            host = state.host,
+            tailnet = com.freecam.common.model.TailnetState(state.tailnetConnected, state.tailnetIp),
+            battery = com.freecam.common.model.BatteryState(state.batteryPercent, state.batteryCharging),
+            storage = com.freecam.common.model.StorageState(
+                state.storageUsedBytes,
+                state.storageFreeBytes,
+                state.storageCapBytes
+            ),
+            motion = com.freecam.common.model.MotionState(
+                state.motionEnabled,
+                state.motionSensitivity,
+                state.eventsToday,
+                state.motionAvailable
+            ),
+            recordingMode = state.recordingMode,
+            error = errorCode?.let { ApiError(it, errorMessage) }
+        )
+    }
+
+    /** Collects everything the UI shows into one snapshot. */
+    private fun publishState() {
+        val choice = NetworkAddresses.hostChoice()
+        val battery = BatteryStatus.read(this)
+        val stats = storageManager?.getStorageStats()
+        val capBytes = settings.storageCapBytes()
+        val usedBytes = stats?.totalSizeBytes ?: 0L
+        val freeBytes = storageManager?.freeBytes() ?: 0L
+
+        val host = choice.host
+        // The status never carries the RTSP password: the viewer already has the
+        // token from pairing and builds the credentialed URL itself.
+        val rtspUrl = if (host != null) "rtsp://$host:${Settings.rtspPort}/${Settings.rtspPath}" else ""
+        val apiUrl = if (host != null) "http://$host:${Settings.apiPort}" else ""
+
+        CameraStateStore.publish(
+            CameraUiState(
+                running = isRunning,
+                recording = recordingManager?.isRecording() == true,
+                uptimeMs = uptimeMillis,
+                cameraName = settings.cameraName,
+                resolution = settings.resolution,
+                fps = settings.frameRate,
+                bitrateKbps = settings.bitrateKbps,
+                rtspUrl = rtspUrl,
+                apiUrl = apiUrl,
+                host = host,
+                tailnetConnected = choice.tailnetIp != null,
+                tailnetIp = choice.tailnetIp,
+                batteryPercent = battery.percent,
+                batteryCharging = battery.charging,
+                storageUsedBytes = usedBytes,
+                storageFreeBytes = freeBytes,
+                storageCapBytes = capBytes,
+                motionEnabled = settings.motionEnabled,
+                motionSensitivity = settings.motionSensitivity,
+                // The camera library gives no access to camera frames, so motion
+                // cannot be detected yet. The UI says so instead of guessing.
+                motionAvailable = false,
+                eventsToday = eventStore.todayCount(),
+                recordingMode = settings.recordingMode,
+                errorCode = errorCode,
+                errorMessage = if (errorCode == null) null else errorMessage
+            )
+        )
     }
 
     private fun buildNotification(): Notification {
@@ -314,7 +425,11 @@ class CameraService : Service() {
         val stopIntent = Intent(this, CameraService::class.java).apply { action = ACTION_STOP }
         val stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE)
 
-        val statusText = if (hasError) "Error: $errorMessage" else if (isRunning) "Streaming" else "Stopped"
+        val statusText = when {
+            hasError -> "Error: $errorMessage"
+            isRunning -> "Streaming"
+            else -> "Stopped"
+        }
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("FreeCam Camera")
@@ -334,69 +449,20 @@ class CameraService : Service() {
     }
 
     override fun onDestroy() {
-        streamControllerJob.cancel()
+        isRunning = false
         uptimeJob.cancel()
-        watchdogJob.cancel()
         apiServer?.stop()
-        motionDetector?.stop()
         recordingManager?.stop()
+        streamController?.stop()
         storageManager?.stop()
         releaseLocks()
         super.onDestroy()
     }
 
-    private fun buildStatusJson(): String {
-        val ip = getLocalIpAddress()
-        val rtspUrl = "rtsp://$ip:${Settings.rtspPort}/${Settings.rtspPath}"
-        val apiUrl = "http://$ip:${Settings.apiPort}"
-        val recording = recordingManager?.isRecording() == true
-        return """{"running":$isRunning,"recording":$recording,"error":${if (hasError) "\"$errorMessage\"" else "null"},"uptime_ms":$uptimeMillis,"rtsp_url":"$rtspUrl","api_url":"$apiUrl","camera_name":"${settings.cameraName}","resolution":"${settings.resolution}","fps":${settings.frameRate}}"""
-    }
-
-    private fun getRecordings(): List<RecordingInfo> {
-        return storageManager?.getRecordings() ?: emptyList()
-    }
-
-    private fun getEvents(from: Long, to: Long): List<MotionEvent> {
-        try {
-            val eventsFile = File(filesDir, "events.json")
-            if (!eventsFile.exists()) return emptyList()
-            val json = eventsFile.readText()
-            // Parse JSON - simplified
-            val events = mutableListOf<MotionEvent>()
-            // For now return empty - would need kotlinx.serialization or manual parsing
-            return events
-        } catch (e: Exception) {
-            appLog.logError("CameraService", "Error reading events", e)
-            return emptyList()
-        }
-    }
-
-    private fun getLocalIpAddress(): String {
-        try {
-            val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
-            while (interfaces.hasMoreElements()) {
-                val iface = interfaces.nextElement()
-                if (iface.isLoopback || !iface.isUp) continue
-                val addresses = iface.inetAddresses
-                while (addresses.hasMoreElements()) {
-                    val addr = addresses.nextElement()
-                    if (addr is java.net.Inet4Address && !addr.isLoopbackAddress) {
-                        return addr.hostAddress
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            appLog.logError("CameraService", "Error getting IP", e)
-        }
-        return "0.0.0.0"
-    }
-
     private fun scheduleNightlyRestart() {
         try {
             val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val restartTime = settings.restartTime // "HH:mm" format
-            val parts = restartTime.split(":")
+            val parts = settings.restartTime.split(":")
             val hour = parts[0].toIntOrNull() ?: 4
             val minute = parts[1].toIntOrNull() ?: 0
 
@@ -410,13 +476,14 @@ class CameraService : Service() {
                 }
             }
 
-            val restartIntent = Intent(this, NightlyRestartReceiver::class.java)
             val pendingIntent = PendingIntent.getBroadcast(
-                this, 0, restartIntent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                this,
+                0,
+                Intent(this, NightlyRestartReceiver::class.java),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                // API 31+ requires SCHEDULE_EXACT_ALARM permission
                 if (alarmManager.canScheduleExactAlarms()) {
                     alarmManager.setExactAndAllowWhileIdle(
                         AlarmManager.RTC_WAKEUP,
@@ -424,14 +491,14 @@ class CameraService : Service() {
                         pendingIntent
                     )
                 } else {
-                    appLog.logError("CameraService", "Cannot schedule exact alarm - permission not granted")
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
                 }
             } else {
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
             }
-            appLog.log("CameraService", "Nightly restart scheduled for ${calendar.time}")
+            appLog.log(TAG, "Nightly restart scheduled for ${calendar.time}")
         } catch (e: Exception) {
-            appLog.logError("CameraService", "Failed to schedule nightly restart", e)
+            appLog.logError(TAG, "Failed to schedule nightly restart", e)
         }
     }
 
@@ -439,6 +506,6 @@ class CameraService : Service() {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        // Service continues running
+        // The camera keeps streaming when the activity is closed.
     }
 }
