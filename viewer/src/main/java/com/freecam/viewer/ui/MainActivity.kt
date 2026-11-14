@@ -54,6 +54,13 @@ class MainActivity : AppCompatActivity() {
         loadCameras()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // The list lives in this activity; coming back from Add camera, Player
+        // or Events must not leave it stale.
+        loadCameras()
+    }
+
     private fun setupRecyclerView() {
         binding.rvCameras.layoutManager = LinearLayoutManager(this)
         binding.rvCameras.adapter = adapter

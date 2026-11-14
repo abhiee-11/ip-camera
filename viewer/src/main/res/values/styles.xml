@@ -40,6 +40,17 @@
         <item name="elevation">0dp</item>
     </style>
 
+    <style name="Widget.FreeCam.OutlineButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">@color/sodium</item>
+        <item name="android:textColor">@color/sodium</item>
+        <item name="android:textSize">@dimen/text_action</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:minHeight">46dp</item>
+        <item name="cornerRadius">@dimen/radius_button</item>
+        <item name="elevation">0dp</item>
+    </style>
+
     <style name="Widget.FreeCam.SectionLabel" parent="">
         <item name="android:textSize">@dimen/text_label</item>
         <item name="android:textColor">@color/mute</item>
