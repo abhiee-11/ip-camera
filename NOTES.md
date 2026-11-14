@@ -203,6 +203,49 @@ The camera posts to the configured ntfy topic when the stream starts and when an
 error happens. The topic is the secret: whoever holds it receives the alerts. With no
 topic configured nothing is sent.
 
+## 2026-11-14 — On-device results (Lenovo TB330FU as camera, vivo V2434 as viewer)
+
+Hard facts from the session (devices were used only to prove the chain works):
+
+- **Lenovo TB330FU is the camera.** Android 15, 1200x1920 @240dpi. Wi-Fi had been
+  disabled with an auto-shutdown; enabling it joined the home network at
+  192.168.1.64. The tablet suspends the CPU aggressively when idle — USB activity
+  wakes it (ping answers, API answers; otherwise it is unreachable until poked).
+  Battery was 2-3% charging; recording 640x480@15fps drains slowly but it stays
+  alive on USB. `run-as` can read but not write the app's shared_prefs.
+- **vivo V2434 is the viewer.** Android 16, plays the tablet's live RTSP stream
+  once the NAT/TCP fallback kicks in (first seconds hang on the buffering spinner).
+  After inactivity it drops to a PIN lock screen — PIN 1379, given by the owner.
+  The phone locked itself twice mid-session. When the phone locked while I was
+  driving it, Gmail auto-opened and I stopped device input entirely. There is no
+  supported "keep awake" flag via adb on the vivo.
+- **Verified end-to-end on hardware**: tablet streams headless RTSP with Basic
+  auth (freecam + token); Media3 plays it in the vivo (RtspMediaSource); the HTTP
+  API answers on IPv4; recording produces real, playable 5-minute MP4s; events flow
+  (stream start/stop, recording start/stop) into /api/events; the vivo saved the
+  pairing (after the list-on-resume fix) and shows live camera state.
+- **Counter-intuitive discovery**: on BOTH devices, relaunching the camera app
+  after a force-stop revives the stream automatically — the system restarts the
+  sticky foreground service with a null intent, and the app treats null as
+  ACTION_START. First-ever launch after install shows STOPPED, as expected.
+- **Wireless ADB on Android 8 (API 27, e.g. A2 Core) is not possible**; the
+  camera phone cannot be reached from this PC except through the APK served over
+  Wi-Fi plus the HTTP API.
+- **Toolchain**: the bundled JDK/Gradle were synthetic (gradlew.bat hardcoded 8.5;
+  gradle-wrapper.jar was a stub; distributionUrl was a file:// path). Fixed:
+  genuine 8.7 wrapper regenerated, Temurin JDK 17 at C:\tools\jdk-17 (the "vendored"
+  C:\...\FreeCam\java17 disappeared mid-session — the machine's other agent may
+  have removed it). Local builds:
+  `$env:JAVA_HOME = 'C:\tools\jdk-17'` then `.\gradlew.bat assembleDebug lintDebug testDebugUnitTest --no-daemon`
+- **Screencaps are black when the vivo is asleep or the notification shade is
+  open** (mCurrentFocus=NotificationShade). Tap BACK to close it.
+- **tailnet.connected returns false on the home Wi-Fi** (no 100.64/10 address);
+  the QR and the viewer still work because the tablet and vivo are on the same
+  subnet and host=192.168.1.64 is reachable directly.
+- **`gradle.properties` uses `org.gradle.configureondemand=true`**, which masked a
+  stale-build situation: the APK was not rebuilt while sources changed, so several
+  device "verification" passes were testing an old build. Prefer clean builds.
+
 ## Version History
 
 | Version | Date | Changes |
