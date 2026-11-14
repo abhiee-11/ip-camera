@@ -96,7 +96,7 @@ class CameraService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
     private val scope = CoroutineScope(Dispatchers.IO)
-    private val uptimeJob = Job()
+    private var uptimeJob: Job? = null
     private var streamController: StreamController? = null
     private var apiServer: ApiServer? = null
     private var recordingManager: RecordingManager? = null
@@ -236,8 +236,8 @@ class CameraService : Service() {
 
         isRunning = true
         recordingManager?.start()
-        uptimeJob.cancel()
-        scope.launch(uptimeJob) {
+        uptimeJob?.cancel()
+        uptimeJob = scope.launch {
             var tick = 0
             while (isRunning) {
                 uptimeMillis = System.currentTimeMillis() - startTime
@@ -255,7 +255,7 @@ class CameraService : Service() {
         if (!isRunning && streamController == null) return
         appLog.log(TAG, "Stopping streaming")
         isRunning = false
-        uptimeJob.cancel()
+        uptimeJob?.cancel()
 
         recordingManager?.stop()
         streamController?.stop()
@@ -455,7 +455,7 @@ class CameraService : Service() {
 
     override fun onDestroy() {
         isRunning = false
-        uptimeJob.cancel()
+        uptimeJob?.cancel()
         apiServer?.stop()
         recordingManager?.stop()
         streamController?.stop()
