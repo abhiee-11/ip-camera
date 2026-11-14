@@ -98,31 +98,34 @@ On the camera phone:
 
 ## Camera App Features (Phase 1)
 
-- **RTSP Streaming**: Hardware H.264 encoding via RootEncoder + `RtspServerCamera2` from RTSP-Server 1.2.1 on port 8554 (`rtsp://<ip>:8554/live`)
-- **HTTP API**: NanoHTTPD on port 8080 with Bearer token auth
-  - `GET /api/status` - Camera status (streaming, recording, storage, uptime)
-  - `GET /api/recordings` - List recordings with metadata
-  - `GET /api/events` - Motion events log
-  - `GET /recordings/<file>` - Download recording (supports Range header)
+- **RTSP Streaming**: Hardware H.264 encoding via RootEncoder + `RtspServerCamera2` from RTSP-Server 1.2.1 on port 8554 (`rtsp://freecam:<token>@<ip>:8554/live`). The server runs **headless** — no view has to be attached — so the stream survives the app being closed. A preview surface is optional, for aiming the camera.
+- **HTTP API**: NanoHTTPD on port 8080 with Bearer token auth. Every response uses the shared contract in `:common`.
+  - `GET /api/status` - running, recording, uptime, address, tailnet, battery, storage, motion, recording mode, error
+  - `GET /api/snapshot` - the most recent frame as `image/jpeg` (`404 not_streaming` until a frame source exists)
+  - `GET /api/recordings` - list recordings with size, start time and real duration
+  - `GET /api/events` - the event log (stream start/stop, recording start/stop, errors, token resets)
+  - `GET /recordings/<file>` - Download recording (supports Range header, streamed, never buffered whole)
+  - Errors: `{"error":{"code":"...","message":"..."}}`
 - **Foreground Service**: Wake lock + Wi-Fi lock, API 29+ `FOREGROUND_SERVICE_TYPE_CAMERA`
-- **Auto-restart**: On boot (`BootReceiver`), encoder crash (exponential backoff), nightly at 04:00 (`AlarmManager`)
-- **Recording Modes**: Off / Motion-only / Continuous (5-min segments, 5s pre-roll circular buffer)
+- **Auto-restart**: On boot (`BootReceiver`). The nightly encoder restart is fixed but **off by default** until it is proven safe on the real phone.
+- **Recording**: MP4 written by the camera library's own recorder, so the file has real SPS/PPS. 5-minute segments, read back with `MediaMetadataRetriever` for duration.
+- **Recording Modes**: Off / Continuous. Motion-only is **not available**: the camera library exposes no camera frames, so the app reports motion as `unavailable` instead of guessing. See NOTES.md.
 - **Storage Management**: Age-based cleanup (default 7 days) + size cap (default 6 GB)
-- **Motion Detection**: YUV frame difference (3 fps, low-res luma), sensitivity levels, cooldown, EMA reference frame
-- **QR Pairing**: Generates pairing JSON with Tailscale IP (100.x.x.x) priority
-- **Dim Screen Mode**: Black screen with clock, tap to exit
-- **Battery Optimization Exemption**: Runtime request with settings deep-link
+- **QR Pairing**: Generates pairing JSON with Tailscale IP (100.x.x.x) priority. The pairing token is also the RTSP password, so the QR format did not change.
+- **Dim Screen Mode**: Near-black screen with a clock, lowest brightness, keep-screen-on, tap to exit
+- **Dashboard**: A device readout, not a card deck. REC/STOPPED badge, uptime, format line, one primary action, two tiles, and a telemetry readout where every number comes from live state. Unknown values show `—`, configured values are labelled `configured`.
 
 ## Viewer App Features
 
-- **Camera List**: Online status ping (every 15s), swipe to refresh, long-press menu
-- **Add Camera**: QR scan (ZXing) or manual entry, parses camera QR format
-- **Live RTSP Playback**: Media3 ExoPlayer 1.4.1 with auto-reconnect, custom controller
-- **History**: Day chips → recordings list with thumbnails, tap to play
+- **Camera List**: Flat rows with a live snapshot thumbnail, real online/offline state, battery and address; swipe to refresh; long-press menu; an actionable empty state
+- **Add Camera**: QR scan (ZXing) or manual entry, parses the camera QR format
+- **Live RTSP Playback**: Media3 ExoPlayer 1.4.1 with the credentials in the URL, custom controller, a LIVE chip and a right-hand rail for history, events and fullscreen
+- **Faults**: A failed stream shows what went wrong (`Camera is offline`, `Could not play this clip`) with a Retry action, not a black rectangle
+- **History**: Recordings with real duration and size, tap to play (requests carry the bearer token)
 - **Playback Controls**: Seek bar, 10s skip back/forward, 1x/2x/4x speed
-- **Events**: Motion events grouped by day with thumbnails, tap to play recording
+- **Events**: The event log with the clip it refers to, tap to play
 - **Settings**: Auto-connect, screen-on, HW decoding, low latency, SSL verify, cache clear
-- **Secure Storage**: Tokens stored in SharedPreferences (no EncryptedSharedPreferences dependency)
+- **Status strip**: Shown only when there is something to report. A strip reading zeros would be a lie.
 
 ## Security
 
