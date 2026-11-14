@@ -5,27 +5,52 @@
     <string name="pairing_title">Pair Viewer</string>
     <string name="logs_title">Logs</string>
 
-    <!-- Main screen -->
-    <string name="status_streaming">Streaming</string>
-    <string name="status_stopped">Stopped</string>
-    <string name="status_error">Error</string>
-    <string name="btn_start">Start Streaming</string>
-    <string name="btn_stop">Stop Streaming</string>
+    <!-- Dashboard -->
+    <string name="state_recording">REC</string>
+    <string name="state_stopped">STOPPED</string>
+    <string name="action_start_streaming">Start streaming</string>
+    <string name="action_stop_streaming">Stop streaming</string>
+    <string name="action_starting">starting…</string>
+    <string name="action_restarting">Restarting…</string>
+    <string name="tile_preview">Preview</string>
+    <string name="tile_pair_viewer">Pair viewer</string>
+    <string name="section_telemetry">Telemetry</string>
+    <string name="label_address">Address</string>
+    <string name="label_tailnet">Tailnet</string>
+    <string name="label_battery">Battery</string>
+    <string name="label_recordings">Recordings</string>
+    <string name="label_motion">Motion</string>
+    <string name="label_events_today">Events today</string>
+    <string name="value_unknown">—</string>
+    <string name="value_tailnet_connected">connected</string>
+    <string name="value_tailnet_absent">not on tailnet</string>
+    <string name="value_motion_unavailable">unavailable</string>
+    <string name="value_charging">charging</string>
+    <string name="value_off">off</string>
     <string name="btn_settings">Settings</string>
     <string name="btn_pairing">Pair Viewer</string>
     <string name="btn_logs">Logs</string>
     <string name="btn_dim_screen">Dim Screen</string>
-    <string name="preview_toggle">Show Preview</string>
+    <string name="menu_more">More</string>
+    <string name="menu_restart_camera">Restart camera</string>
+    <string name="menu_show_logs">Show logs</string>
+    <string name="menu_pair_viewer">Pair viewer</string>
+    <string name="menu_dim_screen">Dim screen</string>
+    <string name="menu_reset_token">Reset pairing token</string>
+    <string name="dialog_reset_token_title">Reset pairing token?</string>
+    <string name="dialog_reset_token_message">Paired viewers will stop working until they scan the new code.</string>
+    <string name="dialog_reset_token_confirm">Reset token</string>
+    <string name="dialog_cancel">Cancel</string>
 
-    <!-- Info card -->
-    <string name="info_stream_address">Stream Address</string>
-    <string name="info_uptime">Uptime</string>
-    <string name="info_resolution_fps_bitrate">Resolution / FPS / Bitrate</string>
-    <string name="info_battery">Battery</string>
-    <string name="info_storage_free">Free Storage</string>
-    <string name="info_storage_used">Recordings</string>
-    <string name="info_events_today">Events Today</string>
-    <string name="info_motion">Motion Detection</string>
+    <!-- Faults -->
+    <string name="fault_encoder_rejected">Encoder rejected the settings</string>
+    <string name="fault_start_failed">Could not start the camera</string>
+    <string name="fault_server_failed">The stream server failed</string>
+    <string name="fault_record_failed">Recording failed</string>
+    <string name="fault_api_failed">The API server failed</string>
+    <string name="fault_auth_failed">A viewer failed to sign in</string>
+    <string name="fault_camera_busy">Camera in use</string>
+    <string name="fault_encoder_stopped">Encoder stopped</string>
 
     <!-- Settings -->
     <string name="settings_camera_name">Camera Name</string>
@@ -34,6 +59,7 @@
     <string name="settings_frame_rate">Frame Rate</string>
     <string name="settings_bitrate">Video Bitrate (kbps)</string>
     <string name="settings_rotation">Rotation</string>
+    <string name="settings_audio_enabled">Microphone Audio</string>
     <string name="settings_recording_mode">Recording Mode</string>
     <string name="settings_storage_cap">Storage Cap (GB)</string>
     <string name="settings_retention_days">Retention (days)</string>
@@ -71,11 +97,12 @@
     <string name="pairing_warning">Only share this QR with people you trust. It gives full access to the camera.</string>
     <string name="pairing_address_label">Address to use:</string>
     <string name="pairing_token_label">Token (copy to viewer):</string>
-    <string name="pairing_copy_token">Copy Token</string>
-    <string name="pairing_copied">Token copied!</string>
+    <string name="pairing_copy_token">Copy token</string>
+    <string name="pairing_copied">Token copied</string>
+    <string name="pairing_rtsp_hint">The token is also the RTSP password.</string>
 
     <!-- Logs -->
-    <string name="logs_copy">Copy All</string>
+    <string name="logs_copy">Copy all</string>
     <string name="logs_clear">Clear</string>
     <string name="logs_copied">Logs copied to clipboard</string>
     <string name="logs_cleared">Logs cleared</string>
@@ -84,13 +111,6 @@
     <string name="perm_camera_rationale">Camera access is required to stream video.</string>
     <string name="perm_notification_rationale">Notifications are used to show streaming status.</string>
     <string name="perm_battery_optimization">Please disable battery optimization for FreeCam to keep streaming with screen off.</string>
-
-    <!-- Errors -->
-    <string name="error_camera_busy">Camera is in use by another app</string>
-    <string name="error_hardware_encoder">Hardware encoder not available</string>
-    <string name="error_no_network">No network connection</string>
-    <string name="error_storage_low">Storage low (less than 1.5 GB free)</string>
-    <string name="error_permission_denied">Permission denied</string>
 
     <!-- Dim screen -->
     <string name="dim_screen_tap_to_exit">Tap to exit dim mode</string>

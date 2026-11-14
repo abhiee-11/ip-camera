@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/menu_about"
-        android:title="@string/about"
-        app:showAsAction="never" />
+        android:id="@+id/menu_restart_camera"
+        android:title="@string/menu_restart_camera" />
+    <item
+        android:id="@+id/menu_pair_viewer"
+        android:title="@string/menu_pair_viewer" />
+    <item
+        android:id="@+id/menu_show_logs"
+        android:title="@string/menu_show_logs" />
+    <item
+        android:id="@+id/menu_dim_screen"
+        android:title="@string/menu_dim_screen" />
+    <item
+        android:id="@+id/menu_reset_token"
+        android:title="@string/menu_reset_token" />
 </menu>

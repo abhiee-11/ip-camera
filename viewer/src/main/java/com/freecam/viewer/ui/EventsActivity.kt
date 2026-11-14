@@ -22,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
+@Suppress("UnsafeOptInUsageError")
 class EventsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityEventsBinding

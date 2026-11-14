@@ -3,50 +3,149 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@android:color/black"
+        android:background="@color/black"
         tools:context=".ui.PlayerActivity">
-
-        <com.google.android.material.appbar.AppBarLayout
-            android:id="@+id/appBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:theme="@style/Theme.FreeCamViewer.AppBarOverlay">
-
-            <androidx.appcompat.widget.Toolbar
-                android:id="@+id/toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:background="@android:color/transparent"
-                app:popupTheme="@style/Theme.FreeCamViewer.PopupOverlay"
-                app:title="Camera" />
-
-        </com.google.android.material.appbar.AppBarLayout>
 
         <androidx.media3.ui.PlayerView
             android:id="@+id/playerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@android:color/black"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior"
-            app:show_buffering="when_playing"
-            app:controller_layout_id="@layout/custom_controller" />
+            android:background="@color/black"
+            app:controller_layout_id="@layout/custom_controller"
+            app:show_buffering="when_playing" />
 
-        <TextView
-            android:id="@+id/tvMode"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:text="@string/live"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp"
-            android:background="@color/dark_surface"
-            android:textColor="@color/teal_200"
-            android:layout_gravity="top|start" />
+            android:layout_gravity="top|start"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical">
 
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+            <TextView
+                android:id="@+id/tvLiveChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_chip_live"
+                android:fontFamily="monospace"
+                android:letterSpacing="0.1"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="4dp"
+                android:text="@string/live"
+                android:textColor="@color/tape"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/tvPlayerName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="@color/bone"
+                android:textSize="@dimen/text_name"
+                android:textStyle="bold"
+                tools:text="Front door" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/rail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|end"
+            android:layout_marginEnd="12dp"
+            android:orientation="vertical">
+
+            <ImageButton
+                android:id="@+id/btnRailHistory"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_rail_button"
+                android:contentDescription="@string/btn_history"
+                android:src="@drawable/ic_history"
+                app:tint="@color/bone" />
+
+            <ImageButton
+                android:id="@+id/btnRailEvents"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_rail_button"
+                android:contentDescription="@string/btn_events"
+                android:src="@drawable/ic_events"
+                app:tint="@color/bone" />
+
+            <ImageButton
+                android:id="@+id/btnRailFullscreen"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_rail_button"
+                android:contentDescription="@string/fullscreen"
+                android:src="@drawable/ic_fullscreen"
+                app:tint="@color/bone" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/liveBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="#CC08090B"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="14dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="monospace"
+                android:text="@string/live"
+                android:textColor="@color/phosphor"
+                android:textSize="11.5sp" />
+
+            <TextView
+                android:id="@+id/tvElapsed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:textColor="@color/mute"
+                android:textSize="11.5sp"
+                tools:text="04:12:37" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/faultBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_banner_fault"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/tvFault"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/bone"
+                android:textSize="15sp"
+                tools:text="Camera is offline" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRetry"
+                style="@style/Widget.FreeCam.PrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="12dp"
+                android:text="@string/retry" />
+        </LinearLayout>
+    </FrameLayout>
 </layout>

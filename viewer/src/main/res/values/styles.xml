@@ -1,24 +1,76 @@
 <resources>
-    <!-- Base application theme (Dark) -->
-    <style name="Theme.FreeCamViewer" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryVariant">@color/primary_variant</item>
-        <item name="colorOnPrimary">@color/on_dark</item>
-        <item name="colorSecondary">@color/secondary</item>
-        <item name="colorSecondaryVariant">@color/primary_variant</item>
-        <item name="colorOnSecondary">@color/on_dark</item>
-        <item name="colorError">@color/error</item>
-        <item name="android:colorBackground">@color/dark_bg</item>
-        <item name="colorSurface">@color/dark_surface</item>
-        <item name="colorOnSurface">@color/on_dark</item>
+    <style name="Theme.FreeCamViewer" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/sodium</item>
+        <item name="colorPrimaryVariant">@color/sodium</item>
+        <item name="colorOnPrimary">@color/on_accent</item>
+        <item name="colorSecondary">@color/phosphor</item>
+        <item name="colorSecondaryVariant">@color/phosphor</item>
+        <item name="colorOnSecondary">@color/on_accent</item>
+        <item name="colorError">@color/tape</item>
+        <item name="android:colorBackground">@color/carbon</item>
+        <item name="colorSurface">@color/panel</item>
+        <item name="colorOnSurface">@color/bone</item>
+        <item name="android:textColorPrimary">@color/bone</item>
+        <item name="android:textColorSecondary">@color/mute</item>
+        <item name="android:statusBarColor">@color/carbon</item>
+        <item name="android:navigationBarColor">@color/carbon</item>
     </style>
 
-    <style name="Theme.FreeCamViewer.NoActionBar" parent="Theme.FreeCamViewer">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
+    <style name="Theme.FreeCamViewer.NoActionBar" parent="Theme.FreeCamViewer" />
+
+    <style name="Widget.FreeCam.PrimaryButton" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/sodium</item>
+        <item name="android:textColor">@color/on_accent</item>
+        <item name="android:textSize">@dimen/text_action</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:minHeight">46dp</item>
+        <item name="cornerRadius">@dimen/radius_button</item>
+        <item name="elevation">0dp</item>
     </style>
 
-    <style name="Theme.FreeCamViewer.AppBarOverlay" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar" />
+    <style name="Widget.FreeCam.DangerButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">@color/tape</item>
+        <item name="android:textColor">@color/tape</item>
+        <item name="android:textSize">@dimen/text_action</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:minHeight">46dp</item>
+        <item name="cornerRadius">@dimen/radius_button</item>
+        <item name="elevation">0dp</item>
+    </style>
 
-    <style name="Theme.FreeCamViewer.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Light" />
+    <style name="Widget.FreeCam.SectionLabel" parent="">
+        <item name="android:textSize">@dimen/text_label</item>
+        <item name="android:textColor">@color/mute</item>
+        <item name="android:paddingTop">@dimen/space_group</item>
+        <item name="android:paddingBottom">@dimen/space_group</item>
+    </style>
+
+    <style name="Widget.FreeCam.ReadoutLabel" parent="">
+        <item name="android:textSize">@dimen/text_label</item>
+        <item name="android:textColor">@color/mute</item>
+    </style>
+
+    <style name="Widget.FreeCam.ReadoutValue" parent="">
+        <item name="android:textSize">@dimen/text_value</item>
+        <item name="android:textColor">@color/bone</item>
+    </style>
+
+    <style name="Widget.FreeCam.ReadoutValueMono" parent="">
+        <item name="android:textSize">@dimen/text_value</item>
+        <item name="android:textColor">@color/bone</item>
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+
+    <style name="Widget.FreeCam.TileLabel" parent="">
+        <item name="android:textSize">@dimen/text_label</item>
+        <item name="android:textColor">@color/bone</item>
+    </style>
+
+    <style name="Widget.FreeCam.AppBar" parent="">
+        <item name="android:background">@color/carbon</item>
+        <item name="android:elevation">0dp</item>
+    </style>
 </resources>

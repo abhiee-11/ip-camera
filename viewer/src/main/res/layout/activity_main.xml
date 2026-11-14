@@ -6,20 +6,72 @@
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@color/carbon"
         tools:context=".ui.MainActivity">
 
         <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:theme="@style/Theme.FreeCamViewer.AppBarOverlay">
+            android:background="@color/carbon">
 
             <androidx.appcompat.widget.Toolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:background="?attr/colorPrimary"
-                app:popupTheme="@style/Theme.FreeCamViewer.PopupOverlay"
+                android:layout_height="56dp"
+                android:background="@color/carbon"
                 app:title="@string/app_name" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="12dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/cameras_title"
+                    android:textColor="@color/bone"
+                    android:textSize="@dimen/text_title"
+                    android:textStyle="bold" />
+
+                <ImageButton
+                    android:id="@+id/btnScan"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/scan_pairing_code"
+                    android:src="@drawable/ic_scan"
+                    app:tint="@color/mute" />
+
+                <ImageButton
+                    android:id="@+id/btnMore"
+                    android:layout_width="@dimen/icon_button"
+                    android:layout_height="@dimen/icon_button"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/menu_more"
+                    android:src="@drawable/ic_overflow"
+                    app:tint="@color/mute" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvStatusStrip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/panel"
+                android:paddingStart="16dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="10dp"
+                android:textColor="@color/mute"
+                android:textSize="@dimen/text_meta"
+                android:visibility="gone"
+                tools:text="3 motion events today · 18 min recorded"
+                tools:visibility="visible" />
         </com.google.android.material.appbar.AppBarLayout>
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -32,32 +84,53 @@
                 android:id="@+id/rvCameras"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="16dp"
                 android:clipToPadding="false"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/item_camera" />
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fabAddCamera"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="16dp"
-            android:contentDescription="@string/add_camera_fab"
-            android:src="@drawable/ic_add"
-            app:backgroundTint="@color/teal_200"
-            app:tint="@color/black" />
-
-        <TextView
-            android:id="@+id/tvEmpty"
+        <LinearLayout
+            android:id="@+id/emptyState"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
-            android:text="@string/no_cameras"
-            android:textSize="18sp"
-            android:textColor="@color/gray_600"
+            android:orientation="vertical"
+            android:padding="32dp"
             android:visibility="gone"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            tools:visibility="visible">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/no_cameras_title"
+                android:textColor="@color/bone"
+                android:textSize="18sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center"
+                android:text="@string/no_cameras_hint"
+                android:textColor="@color/mute"
+                android:textSize="@dimen/text_meta" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnScanEmpty"
+                style="@style/Widget.FreeCam.PrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/scan_a_qr_code" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddManual"
+                style="@style/Widget.FreeCam.DangerButton"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="12dp"
+                android:text="@string/add_manually" />
+        </LinearLayout>
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>

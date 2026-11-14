@@ -2,31 +2,37 @@ package com.freecam.viewer.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageButton
+import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.rtsp.RtspMediaSource
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.ui.PlayerView
 import com.freecam.common.model.Pairing
 import com.freecam.common.model.RecordingInfo
 import com.freecam.viewer.R
 import com.freecam.viewer.databinding.ActivityPlayerBinding
 import com.freecam.viewer.network.ApiClient
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.common.MediaItem
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.rtsp.RtspMediaSource
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.ui.PlayerView
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
-@OptIn(UnstableApi::class)
+/**
+ * The live feed and recorded clips. The feed owns the screen: the chrome is
+ * minimal and a fault names its cause instead of leaving a black rectangle.
+ */
+@UnstableApi
 class PlayerActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPlayerBinding
@@ -35,20 +41,11 @@ class PlayerActivity : AppCompatActivity() {
     private val apiClient = ApiClient()
     private var isLive = true
     private var playbackRecording: RecordingInfo? = null
-    
-    // Controller views
-    private lateinit var btnSkipBack: ImageButton
-    private lateinit var btnSkipForward: ImageButton
-    private lateinit var btnPlayPause: ImageButton
-    private lateinit var btnSpeed: Button
-    private lateinit var btnHistory: Button
-    private lateinit var btnEvents: Button
+    private var isFullscreen = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_player)
-        setSupportActionBar(binding.toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         val json = intent.getStringExtra("pairing") ?: return finish()
         pairing = Json.decodeFromString(Pairing.serializer(), json)
@@ -60,54 +57,40 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         setupPlayer()
-        setupControls()
+        setupRail()
     }
 
     private fun setupPlayer() {
         exoPlayer = ExoPlayer.Builder(this).build()
         binding.playerView.player = exoPlayer
-        
-        // Get controller views after layout
-        binding.playerView.post {
-            initControllerViews()
-        }
+        exoPlayer?.addListener(object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) {
+                showFault(error)
+            }
+        })
 
-        if (isLive) {
-            playLive()
-        } else {
-            playRecording()
-        }
+        if (isLive) playLive() else playRecording()
 
         exoPlayer?.playWhenReady = true
+        binding.tvLiveChip.visibility = if (isLive) View.VISIBLE else View.GONE
+        binding.liveBar.visibility = if (isLive) View.VISIBLE else View.GONE
+        binding.rail.visibility = if (isLive) View.VISIBLE else View.GONE
+        binding.tvPlayerName.text = pairing?.name ?: ""
     }
 
-    private fun initControllerViews() {
-        btnSkipBack = binding.playerView.findViewById(R.id.btnSkipBack)
-        btnSkipForward = binding.playerView.findViewById(R.id.btnSkipForward)
-        btnPlayPause = binding.playerView.findViewById(R.id.exo_play_pause)
-        btnSpeed = binding.playerView.findViewById(R.id.btnSpeed)
-        btnHistory = binding.playerView.findViewById(R.id.btnHistory)
-        btnEvents = binding.playerView.findViewById(R.id.btnEvents)
-    }
-
-    @Suppress("UnsafeOptInUsageError")
     private fun playLive() {
         val pairing = this.pairing ?: return
+        // The credentials are part of the URL: the camera's RTSP server asks
+        // for them.
         val rtspUrl = ApiClient.buildRtspUrl(pairing)
-        
         val mediaSource = RtspMediaSource.Factory()
             .setUserAgent("FreeCam Viewer")
             .createMediaSource(MediaItem.fromUri(rtspUrl))
-        
         exoPlayer?.setMediaSource(mediaSource)
         exoPlayer?.prepare()
-        
-        supportActionBar?.title = pairing.name
-        binding.tvMode.text = getString(R.string.live)
-        binding.tvMode.setTextColor(0xFF03DAC5.toInt())
+        startElapsedTicker()
     }
 
-    @Suppress("UnsafeOptInUsageError")
     private fun playRecording() {
         val pairing = this.pairing ?: return
         val recording = playbackRecording ?: return
@@ -126,64 +109,71 @@ class PlayerActivity : AppCompatActivity() {
             .createMediaSource(mediaItem)
         exoPlayer?.setMediaSource(mediaSource)
         exoPlayer?.prepare()
-        
-        supportActionBar?.title = pairing.name
-        binding.tvMode.text = getString(R.string.history_title)
-        binding.tvMode.setTextColor(0xFFFFFFFF.toInt())
     }
 
-    private fun setupControls() {
-        btnSkipBack.setOnClickListener { seekRelative(-10000) }
-        btnSkipForward.setOnClickListener { seekRelative(10000) }
-        btnPlayPause.setOnClickListener { 
-            exoPlayer?.playWhenReady = !(exoPlayer?.playWhenReady ?: false)
-        }
-        btnSpeed.setOnClickListener { showSpeedMenu() }
-        
-        if (isLive) {
-            btnHistory.setOnClickListener {
-                val intent = Intent(this, HistoryActivity::class.java).apply {
-                    putExtra("pairing", Json.encodeToString(Pairing.serializer(), pairing!!))
+    /** Shows the camera's own uptime, so the viewer never invents a number. */
+    private fun startElapsedTicker() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            while (true) {
+                val pairing = this@PlayerActivity.pairing ?: break
+                val status = apiClient.getStatus(pairing.host, pairing.httpPort, pairing.token)
+                runOnUiThread {
+                    if (status != null) {
+                        val seconds = status.uptimeMs / 1000
+                        binding.tvElapsed.text = String.format(
+                            "%02d:%02d:%02d",
+                            seconds / 3600,
+                            (seconds % 3600) / 60,
+                            seconds % 60
+                        )
+                    }
                 }
-                startActivity(intent)
+                delay(5000)
             }
-            btnEvents.setOnClickListener {
-                val intent = Intent(this, EventsActivity::class.java).apply {
-                    putExtra("pairing", Json.encodeToString(Pairing.serializer(), pairing!!))
-                }
-                startActivity(intent)
-            }
-        } else {
-            btnHistory.visibility = View.GONE
-            btnEvents.visibility = View.GONE
         }
     }
 
-    private fun seekRelative(ms: Long) {
-        exoPlayer?.seekTo((exoPlayer?.currentPosition ?: 0) + ms)
+    private fun setupRail() {
+        binding.btnRailHistory.setOnClickListener { openCameraList(R.string.btn_history) }
+        binding.btnRailEvents.setOnClickListener { openCameraList(R.string.btn_events) }
+        binding.btnRailFullscreen.setOnClickListener {
+            val decor = window.decorView
+            if (isFullscreen) {
+                decor.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+                isFullscreen = false
+            } else {
+                decor.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                isFullscreen = true
+            }
+        }
+        binding.btnRetry.setOnClickListener {
+            binding.faultBlock.visibility = View.GONE
+            if (isLive) playLive() else playRecording()
+        }
     }
 
-    private fun showSpeedMenu() {
-        val popup = androidx.appcompat.widget.PopupMenu(this, btnSpeed)
-        popup.menuInflater.inflate(R.menu.speed_menu, popup.menu)
-        popup.setOnMenuItemClickListener { item ->
-            val speed = when (item.itemId) {
-                R.id.speed_1x -> 1.0f
-                R.id.speed_2x -> 2.0f
-                R.id.speed_4x -> 4.0f
-                else -> 1.0f
-            }
-            val currentParams = exoPlayer?.playbackParameters
-            exoPlayer?.playbackParameters = currentParams?.withSpeed(speed) ?: androidx.media3.common.PlaybackParameters(speed)
-            btnSpeed.text = when (speed) {
-                1.0f -> getString(R.string.speed_1x)
-                2.0f -> getString(R.string.speed_2x)
-                4.0f -> getString(R.string.speed_4x)
-                else -> getString(R.string.speed_1x)
-            }
-            true
+    private fun openCameraList(titleRes: Int) {
+        val pairing = this.pairing ?: return
+        val target = if (titleRes == R.string.btn_history) HistoryActivity::class.java else EventsActivity::class.java
+        val intent = Intent(this, target).apply {
+            putExtra("pairing", Json.encodeToString(Pairing.serializer(), pairing))
         }
-        popup.show()
+        startActivity(intent)
+    }
+
+    private fun showFault(error: PlaybackException) {
+        val message = when {
+            error.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED ->
+                getString(R.string.fault_camera_offline)
+            error.errorCode == PlaybackException.ERROR_CODE_INVALID_STATE ->
+                getString(R.string.fault_cannot_play)
+            else -> getString(R.string.fault_cannot_play)
+        }
+        binding.faultBlock.visibility = View.VISIBLE
+        binding.tvFault.text = message
+        binding.tvLiveChip.visibility = View.GONE
     }
 
     override fun onDestroy() {
@@ -194,30 +184,6 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        exoPlayer?.playWhenReady = false
-    }
-
-    override fun onResume() {
-        super.onResume()
-        exoPlayer?.playWhenReady = true
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.player_menu, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                finish()
-                true
-            }
-            R.id.menu_fullscreen -> {
-                // Toggle fullscreen
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
+        if (exoPlayer?.isPlaying == true) exoPlayer?.pause()
     }
 }

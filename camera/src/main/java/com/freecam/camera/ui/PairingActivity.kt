@@ -51,19 +51,22 @@ class PairingActivity : AppCompatActivity() {
     }
 
     private fun generatePairingQR() {
-        val ip = getLocalIpAddress()
+        val choice = com.freecam.camera.util.NetworkAddresses.hostChoice()
+        val ip = choice.host ?: "0.0.0.0"
+        val rtspUrl = "rtsp://$ip:${Settings.rtspPort}/${Settings.rtspPath}"
+        val apiUrl = "http://$ip:${Settings.apiPort}"
         val pairingData = JSONObject().apply {
             put("type", "freecam_pairing")
             put("version", 1)
             put("name", settings.cameraName)
-            put("rtsp_url", "rtsp://$ip:${Settings.rtspPort}/${Settings.rtspPath}")
-            put("api_url", "http://$ip:${Settings.apiPort}")
+            put("rtsp_url", rtspUrl)
+            put("api_url", apiUrl)
             put("token", settings.token)
             put("mode", settings.destinationMode)
         }.toString()
 
-        binding.tvAddress.text = getString(R.string.pairing_address_label) + "\nrtsp://$ip:${Settings.rtspPort}/${Settings.rtspPath}"
-        binding.tvToken.text = getString(R.string.pairing_token_label) + "\n${settings.token}"
+        binding.tvAddress.text = "$rtspUrl\n$apiUrl"
+        binding.tvToken.text = "${getString(R.string.pairing_token_label)}\n${settings.token}"
 
         lifecycleScope.launch(Dispatchers.IO) {
             val qrBitmap = generateQRCode(pairingData, 400)

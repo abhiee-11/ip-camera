@@ -1,177 +1,283 @@
 package com.freecam.camera.ui
 
 import android.Manifest
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
+import android.view.View
+import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
-import androidx.lifecycle.lifecycleScope
 import com.freecam.camera.R
-import com.freecam.camera.data.AppLog
+import com.freecam.camera.data.CameraUiState
 import com.freecam.camera.data.Settings
 import com.freecam.camera.databinding.ActivityMainBinding
 import com.freecam.camera.service.CameraService
-import kotlinx.coroutines.launch
 
+/**
+ * The camera dashboard. One glance says whether the camera is working, and
+ * every number on it comes from the live state the service publishes.
+ */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private lateinit var settings: Settings
     private val handler = Handler(Looper.getMainLooper())
-    private val updateRunnable = Runnable { updateUI() }
-    private val CAMERA_PERMISSION_REQUEST_CODE = 1001
+    private val updateRunnable = Runnable { render(CameraService.snapshot()) }
+    private var cameraPermissionRequestCode = 1001
+    private var previewAttached = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        settings = Settings.getInstance(this)
 
-        setupButtons()
-        updateUI()
+        setupActions()
+        render(CameraService.snapshot())
     }
 
-    override fun onResume() {
-        super.onResume()
+    override fun onStart() {
+        super.onStart()
+        if (settings.previewEnabled) setPreview(true)
         handler.postDelayed(updateRunnable, 1000)
     }
 
-    override fun onPause() {
-        super.onPause()
+    override fun onStop() {
+        super.onStop()
         handler.removeCallbacks(updateRunnable)
+        // The preview surface belongs to this activity. Without it the camera
+        // keeps streaming, headless.
+        if (previewAttached) setPreview(false)
     }
 
-    private fun setupButtons() {
-        binding.btnStartStop.setOnClickListener {
-            if (!hasCameraPermission()) {
+    override fun onDestroy() {
+        super.onDestroy()
+        CameraService.attachPreviewView(null)
+    }
+
+    private fun setupActions() {
+        binding.btnPrimary.setOnClickListener {
+            if (!CameraService.isRunning && !hasCameraPermission()) {
                 requestCameraPermission()
                 return@setOnClickListener
             }
-            val intent = Intent(this, CameraService::class.java).apply {
-                action = if (CameraService.isRunning) CameraService.ACTION_STOP else CameraService.ACTION_START
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent)
-            } else {
-                startService(intent)
-            }
+            sendServiceAction(if (CameraService.isRunning) CameraService.ACTION_STOP else CameraService.ACTION_START)
+        }
+
+        binding.tilePreview.setOnClickListener {
+            val next = !settings.previewEnabled
+            settings.previewEnabled = next
+            setPreview(next)
+            binding.tvTilePreview.text = getString(if (next) R.string.action_restarting else R.string.tile_preview)
+            handler.postDelayed({
+                binding.tvTilePreview.text = getString(R.string.tile_preview)
+            }, 1500)
+        }
+
+        binding.tilePairing.setOnClickListener {
+            startActivity(Intent(this, PairingActivity::class.java))
         }
 
         binding.btnSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
-        binding.btnPairing.setOnClickListener {
-            startActivity(Intent(this, PairingActivity::class.java))
-        }
-
-        binding.btnLogs.setOnClickListener {
-            startActivity(Intent(this, LogsActivity::class.java))
-        }
-
-        binding.btnDimScreen.setOnClickListener {
-            startActivity(Intent(this, DimScreenActivity::class.java))
-        }
-
-        binding.switchPreview.setOnCheckedChangeListener { _, isChecked ->
-            val intent = Intent(this, CameraService::class.java).apply {
-                action = CameraService.ACTION_SET_PREVIEW
-                putExtra(CameraService.EXTRA_PREVIEW_ENABLED, isChecked)
+        binding.btnOverflow.setOnClickListener { anchor ->
+            val popup = PopupMenu(this, anchor)
+            popup.menuInflater.inflate(R.menu.main_menu, popup.menu)
+            popup.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.menu_restart_camera -> {
+                        sendServiceAction(CameraService.ACTION_RESTART_CAMERA)
+                        true
+                    }
+                    R.id.menu_show_logs -> {
+                        startActivity(Intent(this, LogsActivity::class.java))
+                        true
+                    }
+                    R.id.menu_pair_viewer -> {
+                        startActivity(Intent(this, PairingActivity::class.java))
+                        true
+                    }
+                    R.id.menu_dim_screen -> {
+                        startActivity(Intent(this, DimScreenActivity::class.java))
+                        true
+                    }
+                    R.id.menu_reset_token -> {
+                        confirmResetToken()
+                        true
+                    }
+                    else -> false
+                }
             }
+            popup.show()
+        }
+    }
+
+    private fun confirmResetToken() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.dialog_reset_token_title)
+            .setMessage(R.string.dialog_reset_token_message)
+            .setPositiveButton(R.string.dialog_reset_token_confirm) { _, _ ->
+                sendServiceAction(CameraService.ACTION_RESET_TOKEN)
+                Toast.makeText(this, R.string.pairing_copied, Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(R.string.dialog_cancel, null)
+            .show()
+    }
+
+    private fun setPreview(enabled: Boolean) {
+        if (enabled) {
+            binding.previewContainer.visibility = View.VISIBLE
+            CameraService.attachPreviewView(binding.previewView)
+            previewAttached = true
+        } else {
+            CameraService.attachPreviewView(null)
+            binding.previewContainer.visibility = View.GONE
+            previewAttached = false
+        }
+        sendServiceAction(CameraService.ACTION_SET_PREVIEW, enabled)
+    }
+
+    private fun sendServiceAction(action: String, previewEnabled: Boolean? = null) {
+        val intent = Intent(this, CameraService::class.java).apply {
+            this.action = action
+            if (previewEnabled != null) {
+                putExtra(CameraService.EXTRA_PREVIEW_ENABLED, previewEnabled)
+            }
+        }
+        try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(intent)
             } else {
                 startService(intent)
             }
-            Toast.makeText(this, if (isChecked) "Preview enabled" else "Preview disabled", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, e.message ?: "Could not reach the camera service", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun render(state: CameraUiState) {
+        binding.tvCameraName.text = state.cameraName.ifEmpty { getString(R.string.app_name) }
+
+        if (state.running) {
+            binding.tvStateBadge.text = getString(R.string.state_recording)
+            binding.tvStateBadge.setBackgroundResource(R.drawable.bg_badge_tape)
+            binding.tvStateBadge.setTextColor(getColor(R.color.tape))
+        } else {
+            binding.tvStateBadge.text = getString(R.string.state_stopped)
+            binding.tvStateBadge.setBackgroundResource(R.drawable.bg_badge_mute)
+            binding.tvStateBadge.setTextColor(getColor(R.color.mute))
+        }
+
+        binding.tvStateClock.text = formatUptime(state.uptimeMs)
+        binding.tvStateSubLine.text = buildString {
+            append(if (state.running) "streaming" else "not streaming")
+            append(" / configured ")
+            append(state.resolution)
+            append(" / ")
+            append(state.fps)
+            append("fps / ")
+            append(state.bitrateKbps)
+            append(" kbps")
+        }
+
+        binding.btnPrimary.text = getString(
+            if (state.running) R.string.action_stop_streaming else R.string.action_start_streaming
+        )
+        if (state.running) {
+            // A destructive action is outlined, never filled. The filled amber
+            // is reserved for the action you want.
+            binding.btnPrimary.backgroundTintList =
+                android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
+            binding.btnPrimary.strokeColor = android.content.res.ColorStateList.valueOf(getColor(R.color.tape))
+            binding.btnPrimary.strokeWidth = resources.displayMetrics.density.toInt().coerceAtLeast(1)
+            binding.btnPrimary.setTextColor(getColor(R.color.tape))
+        } else {
+            binding.btnPrimary.backgroundTintList =
+                android.content.res.ColorStateList.valueOf(getColor(R.color.sodium))
+            binding.btnPrimary.strokeWidth = 0
+            binding.btnPrimary.setTextColor(getColor(R.color.on_accent))
+        }
+
+        binding.tvAddress.text = state.host ?: getString(R.string.value_unknown)
+        binding.tvTailnet.text = getString(
+            if (state.tailnetConnected) R.string.value_tailnet_connected else R.string.value_tailnet_absent
+        )
+        binding.tvTailnet.setTextColor(
+            getColor(if (state.tailnetConnected) R.color.phosphor else R.color.sodium)
+        )
+        binding.tvBattery.text = when {
+            state.batteryPercent == null -> getString(R.string.value_unknown)
+            state.batteryCharging -> "${state.batteryPercent}% ${getString(R.string.value_charging)}"
+            else -> "${state.batteryPercent}%"
+        }
+        binding.tvStorage.text = "${formatBytes(state.storageUsedBytes)} / ${formatBytes(state.storageCapBytes)}"
+        binding.tvMotion.text = when {
+            !state.motionAvailable -> getString(R.string.value_motion_unavailable)
+            !state.motionEnabled -> getString(R.string.value_off)
+            else -> state.motionSensitivity
+        }
+        binding.tvEventsToday.text =
+            if (state.eventsToday > 0) state.eventsToday.toString() else getString(R.string.value_unknown)
+
+        val fault = state.errorMessage
+        if (fault.isNullOrEmpty()) {
+            binding.bannerFault.visibility = View.GONE
+        } else {
+            binding.bannerFault.visibility = View.VISIBLE
+            binding.tvFaultTitle.text = faultTitle(state.errorCode)
+            binding.tvFaultMessage.text = fault
+        }
+
+        handler.postDelayed(updateRunnable, 1000)
+    }
+
+    private fun faultTitle(code: String?): String {
+        return when (code) {
+            "encoder_rejected" -> getString(R.string.fault_encoder_rejected)
+            "start_failed" -> getString(R.string.fault_start_failed)
+            "server_failed" -> getString(R.string.fault_server_failed)
+            "record_failed" -> getString(R.string.fault_record_failed)
+            "api_failed" -> getString(R.string.fault_api_failed)
+            "auth_failed" -> getString(R.string.fault_auth_failed)
+            else -> getString(R.string.fault_encoder_stopped)
         }
     }
 
     private fun hasCameraPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
+            PackageManager.PERMISSION_GRANTED
     }
 
     private fun requestCameraPermission() {
         ActivityCompat.requestPermissions(
             this,
             arrayOf(Manifest.permission.CAMERA),
-            CAMERA_PERMISSION_REQUEST_CODE
+            cameraPermissionRequestCode
         )
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
+        if (requestCode == cameraPermissionRequestCode) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Camera permission granted", Toast.LENGTH_SHORT).show()
+                sendServiceAction(CameraService.ACTION_START)
             } else {
-                Toast.makeText(this, "Camera permission required for streaming", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, R.string.perm_camera_rationale, Toast.LENGTH_LONG).show()
             }
         }
-    }
-
-    private fun updateUI() {
-        val running = CameraService.isRunning
-        val hasError = CameraService.hasError
-        val errorMsg = CameraService.errorMessage
-        val uptime = CameraService.uptimeMillis
-
-        binding.btnStartStop.text = if (running) getString(R.string.btn_stop) else getString(R.string.btn_start)
-        binding.btnStartStop.backgroundTintList = android.content.res.ColorStateList.valueOf(
-            if (running) resources.getColor(R.color.red_200, theme) else resources.getColor(R.color.green_200, theme)
-        )
-
-        val statusText = when {
-            hasError -> getString(R.string.status_error) + ": $errorMsg"
-            running -> getString(R.string.status_streaming)
-            else -> getString(R.string.status_stopped)
-        }
-        binding.tvStatus.text = statusText
-        binding.tvStatus.background = resources.getDrawable(
-            if (hasError) R.drawable.bg_status_error else if (running) R.drawable.bg_status_streaming else R.drawable.bg_status_stopped,
-            theme
-        )
-
-        // Update info card
-        val settings = Settings.getInstance(this)
-        val ip = getLocalIpAddress()
-        val rtspUrl = "rtsp://$ip:${Settings.rtspPort}/${Settings.rtspPath}"
-        val apiUrl = "http://$ip:${Settings.apiPort}"
-
-        binding.tvStreamAddress.text = "$rtspUrl\n$apiUrl"
-        binding.tvUptime.text = "${getString(R.string.info_uptime)} ${formatUptime(uptime)}"
-        binding.tvResolutionFpsBitrate.text = "${getString(R.string.info_resolution_fps_bitrate)} ${settings.resolution} / ${settings.frameRate}fps / ${settings.bitrateKbps}kbps"
-        
-        // Battery level
-        val batteryLevel = getBatteryLevel()
-        binding.tvBattery.text = "${getString(R.string.info_battery)} ${if (batteryLevel >= 0) "$batteryLevel%" else "N/A"}"
-
-        // Storage
-        val appLog = (application as com.freecam.camera.App).appLog
-            ?: com.freecam.camera.data.AppLog(this)
-        val storageStats = com.freecam.camera.storage.StorageManager(this, settings, appLog).getStorageStats()
-        binding.tvStorageFree.text = "${getString(R.string.info_storage_free)} ${formatBytes(storageStats.capBytes - storageStats.totalSizeBytes)}"
-        binding.tvStorageUsed.text = "${getString(R.string.info_storage_used)} ${formatBytes(storageStats.totalSizeBytes)} (${storageStats.usagePercent}%)"
-
-        // Events today
-        binding.tvEventsToday.text = "${getString(R.string.info_events_today)} ${CameraService.snapshot().eventsToday}"
-
-        // Motion detection status
-        binding.tvMotion.text = "${getString(R.string.info_motion)} ${if (settings.motionEnabled) "ON (${settings.motionSensitivity})" else "OFF"}"
-
-        // Schedule next update
-        handler.postDelayed(updateRunnable, 2000)
     }
 
     private fun formatUptime(millis: Long): String {
@@ -184,61 +290,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun formatBytes(bytes: Long): String {
         return when {
-            bytes >= 1_000_000_000 -> String.format("%.1f GB", bytes / 1_000_000_000.0)
-            bytes >= 1_000_000 -> String.format("%.1f MB", bytes / 1_000_000.0)
-            bytes >= 1_000 -> String.format("%.1f KB", bytes / 1_000.0)
+            bytes >= 1_000_000_000L -> String.format("%.1f GB", bytes / 1_000_000_000.0)
+            bytes >= 1_000_000L -> String.format("%.1f MB", bytes / 1_000_000.0)
+            bytes >= 1_000L -> String.format("%.1f KB", bytes / 1_000.0)
             else -> "$bytes B"
-        }
-    }
-
-    private fun getBatteryLevel(): Int {
-        try {
-            val batteryManager = getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                return batteryManager.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
-            } else {
-                val intent = registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
-                val level = intent?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
-                val scale = intent?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1) ?: -1
-                return if (level >= 0 && scale > 0) (level * 100 / scale) else -1
-            }
-        } catch (e: Exception) {
-            return -1
-        }
-    }
-
-    private fun getLocalIpAddress(): String {
-        try {
-            val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
-            while (interfaces.hasMoreElements()) {
-                val iface = interfaces.nextElement()
-                if (iface.isLoopback || !iface.isUp) continue
-                val addresses = iface.inetAddresses
-                while (addresses.hasMoreElements()) {
-                    val addr = addresses.nextElement()
-                    if (addr is java.net.Inet4Address && !addr.isLoopbackAddress) {
-                        return addr.hostAddress
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("MainActivity", "Error getting IP", e)
-        }
-        return "0.0.0.0"
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.main_menu, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.menu_about -> {
-                Toast.makeText(this, "FreeCam Camera v1.2.0", Toast.LENGTH_SHORT).show()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
         }
     }
 }

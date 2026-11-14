@@ -124,6 +124,60 @@ curl -H "Authorization: Bearer <token>" http://100.64.x.x:8080/api/recordings
 curl -H "Authorization: Bearer <token>" -H "Range: bytes=0-1023" http://100.64.x.x:8080/recordings/20240101_120000.mp4
 ```
 
+## 2026-11-14 — Pipeline findings and trade-offs
+
+### Headless streaming (no attached view required)
+RootEncoder 2.4.5 exposes `Camera2Base(context, useOpengl)`. With `useOpengl = false`
+the camera renders straight into the encoder's MediaCodec input surface
+(`prepareCamera(videoEncoder.getInputSurface(), fps)`), so the RTSP server runs with
+**no view attached at all**. The earlier code built a 1x1 `OpenGlView` that was never
+attached, so it never got a GL context and the stream never started.
+
+Consequence: the "keep an activity alive with a small attached view" fallback is not
+needed. The camera streams headless, survives the activity being closed, and the
+preview surface is an optional extra for aiming the camera (switching to it restarts
+the stream). "Dim screen" is now a near-black screen with a clock, the lowest
+brightness and keep-screen-on, which is useful but no longer load-bearing.
+
+### Motion detection is unavailable, by design
+RootEncoder 2.4.5 and RTSP-Server 1.2.1 expose no camera frames to the app: there
+is no frame callback and no way to attach a second ImageReader without owning the
+camera session. Every "cheap" alternative (watching encoded frame sizes for spikes,
+watching the RTSP byte counters) measures the encoder, not the scene, and cannot tell
+motion from a static view.
+
+Decision: **motion detection is reported as `unavailable`** and the camera records
+**continuously** instead of pretending to detect motion. The dashboard says
+`unavailable`; it does not show a fake count. Re-enabling motion needs either a
+RootEncoder version with a frame callback or a forked camera pipeline.
+
+### Nightly restart is off by default
+The old receiver stopped the service and immediately started it again while the
+static `isRunning` flag was still true, so the service came back alive but not
+streaming, and the alarm never re-armed itself. The restart now stops the service
+properly, waits, starts a fresh one and re-arms the alarm, but the setting is **off
+by default** until it has run on the real phone without stranding the camera.
+
+### RTSP authentication
+RTSP-Server 1.2.1 supports Basic authentication: `RtspServerStreamClient.setAuthorization(user, password)`
+calls `RtspServer.setAuth(...)`, and the server answers `401` with
+`WWW-Authenticate: Basic realm="pedroSG94"` otherwise. The camera uses user `freecam`
+and the **per-install pairing token** as the password, so the pairing QR did not have
+to change and already-paired viewers keep working. Media3 plays these URLs as
+`rtsp://freecam:<token>@<host>:8554/live`.
+
+Note on exposure: the RTSP server and the HTTP API bind to all interfaces, so the
+camera is reachable from any network the phone is on (the tailnet and the local
+Wi-Fi). Tailscale access controls and the device's own firewall are the boundary.
+There is no built-in option to bind the server to one interface only.
+
+### MP4 recording
+Recording now uses the camera library's own recorder (`startRecord`/`stopRecord` on
+`Camera2Base`), which writes a real MP4 with the codec's SPS/PPS. The previous code
+muxed frames it never received into a hand-built MediaFormat, which could not produce
+a playable file. Segments are 5 minutes; `duration_sec` is read back from the file
+with MediaMetadataRetriever.
+
 ## Version History
 
 | Version | Date | Changes |
@@ -134,6 +188,7 @@ curl -H "Authorization: Bearer <token>" -H "Range: bytes=0-1023" http://100.64.x
 | 1.3.0 | 2026-11-13 | M3: Motion Detection & Recording |
 | 1.4.0 | 2026-11-13 | M4: Camera UI & Settings |
 | 1.5.0 | 2026-11-13 | M5: Viewer App complete |
+| 1.6.0 | 2026-11-14 | Shared contract, headless encoder fix, library MP4 recording, real events, authenticated playback, graphite and amber redesign |
 
 ## Git Push Log
 

@@ -10,7 +10,24 @@
     <string name="about_summary">FreeCam Viewer v1.0</string>
 
     <!-- Main screen -->
+    <string name="cameras_title">Cameras</string>
+    <string name="scan_pairing_code">Scan a pairing code</string>
+    <string name="menu_more">More</string>
     <string name="no_cameras">No cameras added</string>
+    <string name="no_cameras_title">No cameras yet</string>
+    <string name="no_cameras_hint">Scan the pairing code shown on the camera phone to watch it here.</string>
+    <string name="scan_a_qr_code">Scan a QR code</string>
+    <string name="camera_preview">Camera preview</string>
+    <string name="open_camera">Open camera</string>
+    <string name="fullscreen">Fullscreen</string>
+    <string name="retry">Retry</string>
+    <string name="fault_camera_offline">Camera is offline</string>
+    <string name="fault_wrong_token">Wrong pairing token</string>
+    <string name="fault_auth_failed">Stream authentication failed</string>
+    <string name="fault_cannot_play">Could not play this clip</string>
+    <string name="status_live">live</string>
+    <string name="status_offline">offline</string>
+    <string name="value_charging">charging</string>
     <string name="add_camera_fab">Add Camera</string>
     <string name="camera_online">Online</string>
     <string name="camera_offline">Offline</string>

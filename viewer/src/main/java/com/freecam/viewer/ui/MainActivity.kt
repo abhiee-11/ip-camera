@@ -28,6 +28,7 @@ import com.freecam.viewer.R
 import com.freecam.viewer.databinding.ActivityMainBinding
 import com.freecam.viewer.databinding.ItemCameraBinding
 import com.freecam.viewer.network.ApiClient
+import com.freecam.viewer.network.ThumbnailLoader
 import com.google.zxing.integration.android.IntentIntegrator
 import com.google.zxing.integration.android.IntentResult
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +36,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
+@Suppress("UnsafeOptInUsageError")
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -47,7 +49,7 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
 
         setupRecyclerView()
-        setupFab()
+        setupActions()
         setupSwipeRefresh()
         loadCameras()
     }
@@ -58,9 +60,29 @@ class MainActivity : AppCompatActivity() {
         binding.rvCameras.setHasFixedSize(true)
     }
 
-    private fun setupFab() {
-        binding.fabAddCamera.setOnClickListener {
-            showAddCameraDialog()
+    private fun setupActions() {
+        binding.btnScan.setOnClickListener { scanQR() }
+        binding.btnScanEmpty.setOnClickListener { scanQR() }
+        binding.btnAddManual.setOnClickListener {
+            startActivity(Intent(this, AddCameraActivity::class.java))
+        }
+        binding.btnMore.setOnClickListener { anchor ->
+            val popup = PopupMenu(this, anchor)
+            popup.menuInflater.inflate(R.menu.main_menu, popup.menu)
+            popup.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.menu_add_camera -> {
+                        showAddCameraDialog()
+                        true
+                    }
+                    R.id.menu_settings -> {
+                        startActivity(Intent(this, ViewerSettingsActivity::class.java))
+                        true
+                    }
+                    else -> false
+                }
+            }
+            popup.show()
         }
     }
 
@@ -69,7 +91,7 @@ class MainActivity : AppCompatActivity() {
             loadCameras()
             binding.swipeRefresh.isRefreshing = false
         }
-        binding.swipeRefresh.setColorSchemeResources(R.color.teal_200)
+        binding.swipeRefresh.setColorSchemeResources(R.color.phosphor)
     }
 
     private fun showAddCameraDialog() {
@@ -201,7 +223,43 @@ class MainActivity : AppCompatActivity() {
         }
         
         adapter.submitList(cameras)
-        binding.tvEmpty.visibility = if (cameras.isEmpty()) View.VISIBLE else View.GONE
+        binding.emptyState.visibility = if (cameras.isEmpty()) View.VISIBLE else View.GONE
+        binding.rvCameras.visibility = if (cameras.isEmpty()) View.GONE else View.VISIBLE
+        updateStatusStrip(cameras)
+    }
+
+    /**
+     * The strip is hidden when there is nothing to report. A strip reading
+     * zeros would be a lie.
+     */
+    private fun updateStatusStrip(cameras: List<Pairing>) {
+        if (cameras.isEmpty()) {
+            binding.tvStatusStrip.visibility = View.GONE
+            return
+        }
+        lifecycleScope.launch(Dispatchers.IO) {
+            var events = 0
+            var recording = false
+            for (camera in cameras) {
+                val status = apiClient.getStatus(camera.host, camera.httpPort, camera.token)
+                if (status != null) {
+                    events += status.motion.eventsToday
+                    recording = recording || status.recording
+                }
+            }
+            runOnUiThread {
+                if (events > 0 || recording) {
+                    binding.tvStatusStrip.visibility = View.VISIBLE
+                    binding.tvStatusStrip.text = buildString {
+                        if (events > 0) append("$events motion events today")
+                        if (events > 0 && recording) append(" · ")
+                        if (recording) append("recording")
+                    }
+                } else {
+                    binding.tvStatusStrip.visibility = View.GONE
+                }
+            }
+        }
     }
 
     inner class CameraAdapter : RecyclerView.Adapter<CameraAdapter.CameraViewHolder>() {
@@ -227,22 +285,40 @@ class MainActivity : AppCompatActivity() {
         inner class CameraViewHolder(private val binding: ItemCameraBinding) : RecyclerView.ViewHolder(binding.root) {
             fun bind(camera: Pairing) {
                 binding.tvCameraName.text = camera.name
-                binding.tvCameraAddress.text = "${camera.host}:${camera.rtspPort}"
-                
-                // Fetch status
+                binding.tvCameraAddress.text = camera.host
+                binding.tvStatusDot.setTextColor(getColor(R.color.mute))
+                binding.tvCameraStatus.text = getString(R.string.status_offline)
+                binding.ivCameraThumb.setImageDrawable(null)
+
+                // The thumbnail comes from the camera itself. While the camera
+                // cannot produce a frame the placeholder stays.
+                loadThumbnail(camera)
+
                 lifecycleScope.launch(Dispatchers.IO) {
-                    val status = withContext(Dispatchers.IO) {
-                        apiClient.getStatus(camera.host, camera.httpPort, camera.token)
-                    }
+                    val status = apiClient.getStatus(camera.host, camera.httpPort, camera.token)
                     runOnUiThread {
                         if (status != null) {
-                            val statusText = if (status.running) getString(R.string.camera_online) else getString(R.string.camera_offline)
-                            binding.tvStatus.text = statusText
-                            binding.tvStatus.setTextColor(if (status.running) 0xFF03DAC5.toInt() else 0xFFEF5350.toInt())
-                            binding.tvLastSeen.text = getString(R.string.last_seen, com.freecam.common.util.TimeFormat.formatRelative(status.uptimeMs))
+                            binding.tvStatusDot.setTextColor(
+                                getColor(if (status.running) R.color.phosphor else R.color.mute)
+                            )
+                            binding.tvCameraStatus.text = if (status.running) {
+                                buildString {
+                                    append(getString(R.string.status_live))
+                                    val percent = status.battery.percent
+                                    if (percent != null) {
+                                        append(" · ")
+                                        append("$percent%")
+                                        if (status.battery.charging) {
+                                            append(" ${getString(R.string.value_charging)}")
+                                        }
+                                    }
+                                }
+                            } else {
+                                getString(R.string.status_offline)
+                            }
                         } else {
-                            binding.tvStatus.text = getString(R.string.camera_offline)
-                            binding.tvStatus.setTextColor(0xFFEF5350.toInt())
+                            binding.tvStatusDot.setTextColor(getColor(R.color.mute))
+                            binding.tvCameraStatus.text = getString(R.string.status_offline)
                         }
                     }
                 }
@@ -258,6 +334,11 @@ class MainActivity : AppCompatActivity() {
                     showCameraMenu(camera, view)
                     true
                 }
+            }
+
+            private fun loadThumbnail(camera: Pairing) {
+                val url = ApiClient.buildSnapshotUrl(camera.host, camera.httpPort)
+                ThumbnailLoader.load(binding.ivCameraThumb, url, camera.token)
             }
         }
     }

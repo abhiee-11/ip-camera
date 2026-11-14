@@ -28,6 +28,9 @@ class LogsActivity : AppCompatActivity() {
         }
 
         binding.btnClear.setOnClickListener {
+            val appLog = (application as com.freecam.camera.App).appLog
+                ?: com.freecam.camera.data.AppLog(this)
+            appLog.clear()
             binding.tvLogs.text = ""
             Toast.makeText(this, R.string.logs_cleared, Toast.LENGTH_SHORT).show()
         }
@@ -41,10 +44,11 @@ class LogsActivity : AppCompatActivity() {
     }
 
     private fun loadLogs() {
-        val logFile = AppLog.getInstance(this).getLogFile()
+        val appLog = (application as com.freecam.camera.App).appLog
+            ?: com.freecam.camera.data.AppLog(this)
+        val logFile = appLog.getLogFile()
         if (logFile.exists()) {
-            val logs = logFile.readText()
-            binding.tvLogs.text = logs
+            binding.tvLogs.text = logFile.readText()
         } else {
             binding.tvLogs.text = "No logs available"
         }

@@ -4,104 +4,107 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="#CC08090B"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="#CC000000">
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
+        android:orientation="horizontal">
 
         <TextView
             android:id="@+id/exo_position"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@android:color/white"
-            android:textSize="14sp"
-            android:layout_marginEnd="8dp"
+            android:fontFamily="monospace"
+            android:textColor="@color/mute"
+            android:textSize="11sp"
             tools:text="00:00" />
 
         <androidx.media3.ui.DefaultTimeBar
             android:id="@+id/exo_progress"
             android:layout_width="0dp"
             android:layout_height="26dp"
+            android:layout_marginStart="8dp"
             android:layout_weight="1"
-            app:played_color="@color/teal_200"
-            app:buffered_color="@color/teal_700"
-            app:unplayed_color="@color/gray_600" />
+            app:buffered_color="@color/rule"
+            app:played_color="@color/sodium"
+            app:unplayed_color="@color/mute" />
 
         <TextView
             android:id="@+id/exo_duration"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@android:color/white"
-            android:textSize="14sp"
             android:layout_marginStart="8dp"
+            android:fontFamily="monospace"
+            android:textColor="@color/mute"
+            android:textSize="11sp"
             tools:text="00:00" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_marginTop="8dp"
         android:gravity="center"
-        android:layout_marginTop="8dp">
+        android:orientation="horizontal">
 
         <ImageButton
             android:id="@+id/btnSkipBack"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@drawable/ic_skip_back"
-            android:contentDescription="@string/skip_back"
+            android:layout_marginEnd="16dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:layout_marginEnd="16dp" />
+            android:contentDescription="@string/skip_back"
+            android:src="@drawable/ic_skip_back"
+            app:tint="@color/bone" />
 
         <ImageButton
             android:id="@+id/exo_play_pause"
             android:layout_width="56dp"
             android:layout_height="56dp"
-            android:src="@drawable/ic_play_pause"
-            android:contentDescription="@string/play"
+            android:layout_marginEnd="16dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:layout_marginEnd="16dp" />
+            android:contentDescription="@string/play"
+            android:src="@drawable/ic_play_pause"
+            app:tint="@color/bone" />
 
         <ImageButton
             android:id="@+id/btnSkipForward"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@drawable/ic_skip_forward"
-            android:contentDescription="@string/skip_forward"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:layout_marginStart="16dp" />
+            android:contentDescription="@string/skip_forward"
+            android:src="@drawable/ic_skip_forward"
+            app:tint="@color/bone" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_marginTop="8dp"
         android:gravity="center"
-        android:layout_marginTop="8dp">
+        android:orientation="horizontal">
 
         <Button
             android:id="@+id/btnSpeed"
             style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
             android:text="@string/speed_1x"
-            android:textColor="@android:color/white"
-            android:layout_marginEnd="16dp" />
+            android:textColor="@color/mute" />
 
         <Button
             android:id="@+id/btnHistory"
             style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
             android:text="@string/btn_history"
-            android:textColor="@android:color/white"
-            android:layout_marginEnd="16dp" />
+            android:textColor="@color/mute" />
 
         <Button
             android:id="@+id/btnEvents"
@@ -109,6 +112,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/btn_events"
-            android:textColor="@android:color/white" />
+            android:textColor="@color/mute" />
     </LinearLayout>
 </LinearLayout>
