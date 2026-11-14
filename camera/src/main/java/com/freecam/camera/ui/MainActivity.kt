@@ -164,8 +164,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val hostChoice by lazy {
+        com.freecam.camera.util.NetworkAddresses.hostChoice()
+    }
+
     private fun render(state: CameraUiState) {
-        binding.tvCameraName.text = state.cameraName.ifEmpty { getString(R.string.app_name) }
+        // Configured values are read from settings, not from the live store: on a
+        // fresh launch the store still holds its empty default and the screen
+        // would show zeros that were never configured.
+        val name = settings.cameraName.ifEmpty { getString(R.string.app_name) }
+        binding.tvCameraName.text = name
 
         if (state.running) {
             binding.tvStateBadge.text = getString(R.string.state_recording)
@@ -181,11 +189,11 @@ class MainActivity : AppCompatActivity() {
         binding.tvStateSubLine.text = buildString {
             append(if (state.running) "streaming" else "not streaming")
             append(" / configured ")
-            append(state.resolution)
+            append(settings.resolution)
             append(" / ")
-            append(state.fps)
+            append(settings.frameRate)
             append("fps / ")
-            append(state.bitrateKbps)
+            append(settings.bitrateKbps)
             append(" kbps")
         }
 
@@ -207,9 +215,9 @@ class MainActivity : AppCompatActivity() {
             binding.btnPrimary.setTextColor(getColor(R.color.on_accent))
         }
 
-        binding.tvAddress.text = state.host ?: getString(R.string.value_unknown)
+        binding.tvAddress.text = hostChoice.host ?: getString(R.string.value_unknown)
         binding.tvTailnet.text = getString(
-            if (state.tailnetConnected) R.string.value_tailnet_connected else R.string.value_tailnet_absent
+            if (hostChoice.tailnetIp != null) R.string.value_tailnet_connected else R.string.value_tailnet_absent
         )
         binding.tvTailnet.setTextColor(
             getColor(if (state.tailnetConnected) R.color.phosphor else R.color.sodium)
